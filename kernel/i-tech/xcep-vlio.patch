@@ -1,0 +1,24 @@
+diff -ur linux-2.6.20.14-patched/arch/arm/mach-pxa/xcep.c linux-2.6.20.14-itech-2.00/arch/arm/mach-pxa/xcep.c
+--- linux-2.6.20.14-patched/arch/arm/mach-pxa/xcep.c	2009-02-17 18:54:57.000000000 +0000
++++ linux-2.6.20.14-itech-2.00/arch/arm/mach-pxa/xcep.c	2008-11-04 13:32:56.000000000 +0000
+@@ -101,8 +101,20 @@
+ 	.class = I2C_CLASS_HWMON
+ };
+ 
++static void __init xcep_init_vlio(void)
++{
++	/* See Intel XScale Developer's Guide for details */
++	/* Set RDF and RDN to appropriate values (chip select 3 (smc91x)) */
++	MSC1 = (MSC1 & 0xffff) | 0xD5540000;
++
++	/* Set RDF and RDN to appropriate values (chip select 5 (fpga)) */
++	MSC2 = (MSC2 & 0xffff) | 0x72A00000;
++}
++
+ static void __init xcep_init(void)
+ {
++	xcep_init_vlio();
++
+ 	(void) platform_add_devices(devices, ARRAY_SIZE(devices));
+ 	pxa_set_i2c_info(&xcep_i2c_platform_data);
+ }

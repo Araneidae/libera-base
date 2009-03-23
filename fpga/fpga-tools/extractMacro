@@ -1,0 +1,47 @@
+awk ' \
+# $Id: extractMacro 1758 2007-07-06 08:50:28Z ales $
+#---------------------------
+# Detect multiline comments
+#---------------------------
+/\/\*/ { ml_comment = 1 }
+/\*\// { ml_comment = 0 } 
+#------------------------------
+# Create a new verilog file 
+# without the macro definition
+# and an m4 definition file
+#------------------------------
+{ 
+      if (($1 == "`define") && (ml_comment == 0) && (match($2,"[(]"))) {
+         # find out the macro name
+         paren_start = match($2, "[(]")
+         macro_name = substr($2, 1, paren_start-1)
+         # argument list
+         arg_list = substr($2, paren_start+1, length($2)-1-paren_start)
+         # remove white spaces from the argument list
+         gsub("\t","", arg_list)
+         gsub(" ","", arg_list)
+         # store all the parameters in an array
+         n_arg = split(arg_list, arg_array, ",")
+         # now print the m4 definition
+
+         printf "define("macro_name"," > "_m4"
+         #find out the position of $3
+         start_defn = index($0, $3)
+         defn = substr($0, start_defn, length($0)-1-paren_start)
+         for (i=1; i<=n_arg; i++) {
+            initial_val = "\("arg_array[i]"\)"
+            final_val = "\$"i
+            gsub(initial_val, final_val, defn)
+         }
+         print defn")" > "_m4"
+         macro_name_array[j++] = macro_name;
+      }
+      else { 
+         for (k=0;k<j;k++) gsub("\`"macro_name_array[k],macro_name_array[k])
+         print $0
+     } 
+}' $1 > _v
+
+
+
+ 

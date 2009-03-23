@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# $Id: healthd-init 2192 2008-10-07 09:13:06Z matejk $
+#
+# libera - Start/stop Health daemon.
+#
+#
+# Copyright (C) 2005 Instrumentation Technologies
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+# or visit http://www.gnu.org
+
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/opt/bin/healthd
+NAME=healthd
+DESC="Libera health daemon"
+
+test -x $DAEMON || exit 0
+
+# Include healthd defaults if available
+if [ -f /etc/default/healthd ] ; then
+    echo "Found Health daemon configuration file."
+    . /etc/default/healthd
+fi
+
+set -e
+
+case "$1" in
+  start)
+        echo -n "Starting $DESC: "
+        start-stop-daemon --start --quiet --exec $DAEMON
+        echo "$NAME."
+        ;;
+
+  stop)
+        echo -n "Stopping $DESC: "
+        start-stop-daemon --stop --quiet --exec $DAEMON
+        echo "$NAME."
+        ;;
+
+  restart)
+        $0 stop
+        sleep 1
+        $0 start
+        ;;
+
+  status)
+        sensors
+        ;;
+
+  *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|status}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

@@ -1,0 +1,96 @@
+$Id: README 1354 2006-10-16 12:52:21Z ales $
+
+MSP - MSP GNU/Linux device driver for libera
+Copyright (C) 2004-2006 Instrumentation Technologies
+
+You will need a __configured__ kernel source tree in order to compile the 
+MSP GNU/Linux device driver properly. Only extracting the kernel sources 
+won't do the job, because the driver needs to know about certain configuration 
+items, such a module versioning, SMP settings etc.
+You have been warned!
+Make sure the whole kernel source tree is readable for the user that is 
+building the module. If unsure, build the msp module as root.
+
+
+1. BUILDING
+To build the MSP GNU/Linux device driver, type
+
+  cd src
+  make
+
+This will build the msp.o module for the running kernel version. The kernel 
+version is obtained by searching the Linux kernel source tree in the 
+following order:
+  /usr/src/linux
+  /lib/modules/$(shell uname -r)/build
+  /usr/src/linux-$(shell uname -r)
+  /usr/src/linux-$(shell uname -r | sed 's/-.*//')
+  /usr/src/kernel-headers-$(shell uname -r)
+  /usr/src/kernel-source-$(shell uname -r)
+  /usr/src/linux-$(shell uname -r | sed 's/\([0-9]*\.[0-9]*\)\..*/\1/')
+
+
+If you choose your own kernel, either set the KERNELDIR variable in 
+Makefile to your kernel path or specify it on the command line:
+
+  KERNELDIR=/path/to/my/super/kernel  make
+
+When cross-compiling, either set the toolchain prefix (CROSS_COMPILE) in 
+the Makefile or on the command line:
+
+  CROSS_COMPILE=arm-linux- make
+
+The log verbosity can be set through DEBUG variable:
+
+  make DEBUG=2
+
+The following debug levels are supported:
+  DEBUG=0 - Only critical warnings are reported.
+  DEBUG=1 - Warnings are reported especially the results of
+	    sanity checks.
+  DEBUG=2 - Informative messages are reported, including 
+	    variable values, register values etc. All while loops
+	    are protected and cannot run infinitely to avoid machine lockups.
+  DEBUG=3 - Messages when entering and leaving certain sections,
+	    interrupt handlers, tasklets and triggers are reported.
+  DEBUG=4 - The whole bus activity is logged (every read and 
+	    write FPGA operation), but this poses a severe
+	    overhead as well.
+
+Every debug level includes the messges from the previous debug level
+plus additional information that increases the verbosity level.
+
+To install the MSP GNU/Linux device driver, type
+  make install
+
+To install the MSP GNU/Linux device files, type
+  make devices
+
+
+2. LOADING
+Load the Libera GNU/Linux device driver by typing (as root)
+  insmod msp
+or
+  modprobe msp
+
+
+2.1 MODULE PARAMETERS
+The following module parameters can be specified when loading the module:
+
+  iobase  - Base address of Libera device (default = 0x14000000).
+  gpio    - GPIO number used for interrupt, GPIO=IRQ-1 
+	    (default: GPIO=1 -> IRQ=2).
+
+You can make the MSP GNU/Linux device driver module to load on demand by
+adding this to your /etc/modules.conf file:
+
+  alias char-major-241 msp
+
+The module parameters can be specified by adding:
+
+  options msp <param>=<value>
+
+See modules.conf(5) man page for details.
+
+
+Bugs, questions, suggestions and patches should be sent to Ales Bardorfer <ales@i-tech.si>

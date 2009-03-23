@@ -1,0 +1,18 @@
+
+BUILD_ROOT = /scratch/tmp/libera-base
+
+
+BINUTILS_DIR = /dls_sw/targetOS/x-tools/$(TOOLCHAIN_VERSION)/$(COMPILER_PREFIX)
+TAR_DIRS = /dls_sw/prod/targetOS/tar-files /dls_sw/work/targetOS/tar-files
+
+ROOTFS = /home/mga83/targetOS/rootfs
+
+
+TOOLCHAIN_VERSION = gcc-4.3.2-glibc-2.7
+COMPILER_PREFIX = arm-xscale-linux-gnueabi
+
+U_BOOT_DIR = /dls_sw/targetOS/u-boot/xcep/
+
+
+# KERNEL_CONFIG = i-tech
+KERNEL_CONFIG = dls

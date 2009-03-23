@@ -1,0 +1,471 @@
+diff -Nru linux-2.6.20.1-orig/arch/arm/mach-pxa/Kconfig linux-2.6.20.1/arch/arm/mach-pxa/Kconfig
+--- linux-2.6.20.1-orig/arch/arm/mach-pxa/Kconfig	2007-02-20 07:34:32.000000000 +0100
++++ linux-2.6.20.1/arch/arm/mach-pxa/Kconfig	2007-06-06 16:38:40.164278038 +0200
+@@ -37,6 +37,10 @@
+ 	bool "Keith und Koep Trizeps4 DIMM-Module"
+ 	select PXA27x
+ 
++config MACH_XCEP
++	bool "Iskratel Electronics XCEP"
++	select PXA25x
++
+ endchoice
+ 
+ if PXA_SHARPSL
+diff -Nru linux-2.6.20.1-orig/arch/arm/mach-pxa/Makefile linux-2.6.20.1/arch/arm/mach-pxa/Makefile
+--- linux-2.6.20.1-orig/arch/arm/mach-pxa/Makefile	2007-02-20 07:34:32.000000000 +0100
++++ linux-2.6.20.1/arch/arm/mach-pxa/Makefile	2007-06-06 16:38:40.165278120 +0200
+@@ -18,6 +18,7 @@
+ obj-$(CONFIG_MACH_AKITA)	+= akita-ioexp.o
+ obj-$(CONFIG_MACH_POODLE)	+= poodle.o corgi_ssp.o
+ obj-$(CONFIG_MACH_TOSA)         += tosa.o
++obj-$(CONFIG_MACH_XCEP)         += xcep.o
+ 
+ # Support for blinky lights
+ led-y := leds.o
+diff -Nru linux-2.6.20.1-orig/arch/arm/mach-pxa/xcep.c linux-2.6.20.1/arch/arm/mach-pxa/xcep.c
+--- linux-2.6.20.1-orig/arch/arm/mach-pxa/xcep.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.20.1/arch/arm/mach-pxa/xcep.c	2007-06-06 16:41:26.418876357 +0200
+@@ -0,0 +1,128 @@
++/*
++ *  linux/arch/arm/mach-pxa/xcep.c
++ *
++ *  Support for the Iskratel Electronics XCEP platform.
++ *
++ *  Author:     Ales Bardorfer <ales@i-tech.si>
++ *  Updates by: Matej Kenda <matej.kenda@hermes-softlab.com>
++ *  Created:    June 2006
++ *  Copyright:  (C) 2006 Instrumentation Technologies
++ *
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License version 2 as
++ *  published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/sysdev.h>
++#include <linux/major.h>
++#include <linux/fb.h>
++#include <linux/interrupt.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/i2c.h>
++
++#include <asm/setup.h>
++#include <asm/memory.h>
++#include <asm/mach-types.h>
++#include <asm/hardware.h>
++#include <asm/irq.h>
++#include <asm/sizes.h>
++
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++#include <asm/mach/irq.h>
++#include <asm/mach/flash.h>
++
++#include <asm/arch/pxa-regs.h>
++#include <asm/arch/xcep.h>
++#include <asm/arch/udc.h>
++#include <asm/arch/irda.h>
++#include <asm/arch/pxafb.h>
++#include <asm/arch/mmc.h>
++#include <asm/arch/i2c.h>
++
++#include "generic.h"
++
++
++static struct resource smc91x_resources[] = {
++	[0] = {
++		.name	= "smc91x-regs",
++		.start	= XCEP_ETH_PHYS,
++		.end	= XCEP_ETH_END,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= IRQ_GPIO(XCEP_ETH_IRQ),
++		.end	= IRQ_GPIO(XCEP_ETH_IRQ),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.name	= "smc91x-attrib",
++		.start	= 0x0e000000,
++		.end	= 0x0e0fffff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device smc91x_device = {
++	.name		= "smc91x",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(smc91x_resources),
++	.resource	= smc91x_resources,
++};
++
++
++static struct map_desc xcep_io_desc[] __initdata = {
++  	{	/* CPLD */
++		.virtual	= XCEP_CPLD_BASE,
++		.pfn		= __phys_to_pfn(0x10000000),
++		.length		= 0x00000100,
++		.type		= MT_DEVICE
++	}
++};
++
++
++static struct platform_device *devices[] __initdata = {
++	&smc91x_device,
++};
++
++/*
++ * We have to state that there are HWMON devices on the I2C bus on XCEP.
++ * Drivers for HWMON verify capabilities of the adapter when loading and
++ * refuse to attach if the adapter doesn't support HWMON class of devices.
++ * See also Documentation/i2c/porting-clients.
++ */
++static struct i2c_pxa_platform_data xcep_i2c_platform_data  = {
++	.class = I2C_CLASS_HWMON
++};
++
++static void __init xcep_init(void)
++{
++	(void) platform_add_devices(devices, ARRAY_SIZE(devices));
++	pxa_set_i2c_info(&xcep_i2c_platform_data);
++}
++
++static void __init xcep_map_io(void)
++{
++	pxa_map_io();
++	iotable_init(xcep_io_desc, ARRAY_SIZE(xcep_io_desc));
++
++	/* This is for the SMC chip select */
++	pxa_gpio_mode(GPIO79_nCS_3_MD);
++
++}
++
++MACHINE_START(XCEP, "Iskratel XCEP")
++	.phys_io	   = 0x80000000,
++	.io_pg_offst       = 0xf8000000,
++       .boot_params       = 0xa0000100,
++	.map_io		   = xcep_map_io,
++	.init_irq	   = pxa_init_irq,
++	.timer		   = &pxa_timer,
++	.init_machine      = xcep_init,
++MACHINE_END
+diff -Nru linux-2.6.20.1-orig/drivers/mtd/maps/Kconfig linux-2.6.20.1/drivers/mtd/maps/Kconfig
+--- linux-2.6.20.1-orig/drivers/mtd/maps/Kconfig	2007-02-20 07:34:32.000000000 +0100
++++ linux-2.6.20.1/drivers/mtd/maps/Kconfig	2007-06-06 16:38:40.170278529 +0200
+@@ -138,6 +138,13 @@
+ 	  This provides a driver for the on-board flash of the Intel
+ 	  'Lubbock' XScale evaluation board.
+ 
++config MTD_XCEP
++	tristate "CFI Flash device mapped on Iskratel XCEP"
++	depends on MACH_XCEP && MTD_CFI && MTD_PARTITIONS
++	help
++	  This provides a driver for the on-board flash of the Iskratel
++	  XCEP board.
++
+ config MTD_MAINSTONE
+ 	tristate "CFI Flash device mapped on Intel Mainstone XScale eval board"
+ 	depends on MACH_MAINSTONE && MTD_CFI_INTELEXT
+diff -Nru linux-2.6.20.1-orig/drivers/mtd/maps/Makefile linux-2.6.20.1/drivers/mtd/maps/Makefile
+--- linux-2.6.20.1-orig/drivers/mtd/maps/Makefile	2007-02-20 07:34:32.000000000 +0100
++++ linux-2.6.20.1/drivers/mtd/maps/Makefile	2007-06-06 16:38:40.170278529 +0200
+@@ -21,6 +21,7 @@
+ obj-$(CONFIG_MTD_CK804XROM)	+= ck804xrom.o
+ obj-$(CONFIG_MTD_TSUNAMI)	+= tsunami_flash.o
+ obj-$(CONFIG_MTD_LUBBOCK)	+= lubbock-flash.o
++obj-$(CONFIG_MTD_XCEP)		+= xcep.o
+ obj-$(CONFIG_MTD_MAINSTONE)	+= mainstone-flash.o
+ obj-$(CONFIG_MTD_MBX860)	+= mbx860.o
+ obj-$(CONFIG_MTD_CEIVA)		+= ceiva.o
+diff -Nru linux-2.6.20.1-orig/drivers/mtd/maps/xcep.c linux-2.6.20.1/drivers/mtd/maps/xcep.c
+--- linux-2.6.20.1-orig/drivers/mtd/maps/xcep.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.20.1/drivers/mtd/maps/xcep.c	2007-06-06 16:38:40.171278611 +0200
+@@ -0,0 +1,151 @@
++/*
++ * $Id$
++ *
++ * Map driver for the Iskratel XCEP platform.
++ *
++ * Author:      Ales Bardorfer <ales@i-tech.si>
++ * Created:     July 2006
++ * Copyright:	 (C) 2006 Instrumentation Technologies
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++
++#include <linux/dma-mapping.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++
++#include <asm/io.h>
++#include <asm/hardware.h>
++#include <asm/arch/pxa-regs.h>
++#include <asm/arch/xcep.h>
++
++
++#define WINDOW_ADDR 0x00000000
++#define WINDOW_SIZE 32*1024*1024
++
++
++# if 0 // TODO: Can we use DMA on XCEP flash?
++static void xcep_map_inval_cache(struct map_info *map, unsigned long from, ssize_t len)
++{
++	consistent_sync((char *)map->cached + from, len, DMA_FROM_DEVICE);
++}
++#endif 
++
++static struct map_info xcep_map = {
++	.name =     "XCEP flash",
++	.size =		WINDOW_SIZE,
++	.phys =		WINDOW_ADDR,
++	// .inval_cache = 	xcep_map_inval_cache,
++};
++
++
++static struct mtd_partition xcep_partitions[] = {
++	{
++		.name =		"Bootloader",
++		.size =		0x00040000,
++		.offset =	0,
++//		.mask_flags =	MTD_WRITEABLE  /* force read-only */
++	},{
++		.name =		"Bootloader ENV",
++		.size =		0x00040000,
++		.offset =	0x00040000,
++//		.mask_flags =	MTD_WRITEABLE  /* force read-only */
++	},{
++		.name =		"Kernel",
++		.size =		0x00100000,
++		.offset =	0x00080000,
++	},{
++		.name =		"Rescue fs",
++		.size =		0x00280000,
++		.offset =	0x00180000,
++	},{
++		.name =		"Filesystem",
++		.size =		MTDPART_SIZ_FULL,
++		.offset =	0x00400000
++	}
++};
++
++
++static struct mtd_info *xcep_mtd;
++static struct mtd_partition *parsed_parts = NULL;
++static const char *probes[] = { "RedBoot", "cmdlinepart", NULL };
++
++static int __init init_xcep(void)
++{
++	static int nr_parsed_parts = 0;
++	int ret = 0;
++
++	xcep_map.bankwidth = (BOOT_DEF & 1) ? 2 : 4;
++	xcep_map.virt = ioremap(xcep_map.phys, WINDOW_SIZE);
++	if (!xcep_map.virt) {
++		printk(KERN_WARNING "Failed to ioremap %s\n", xcep_map.name);
++		return -ENOMEM;
++	}
++
++	xcep_map.cached = ioremap_cached(xcep_map.phys, WINDOW_SIZE);
++	if (!xcep_map.cached)
++		printk(KERN_WARNING "Failed to ioremap cached %s\n", xcep_map.name);
++	simple_map_init(&xcep_map);
++	
++	printk(KERN_NOTICE "Probing %s at physical address 0x%08lx (%d-bit bankwidth)\n",
++		   xcep_map.name, xcep_map.phys,
++		   xcep_map.bankwidth * 8);
++	
++	xcep_mtd = do_map_probe("cfi_probe", &xcep_map);
++	
++	if (!xcep_mtd) {
++		iounmap((void *)xcep_map.virt);
++		if (xcep_map.cached)
++			iounmap(xcep_map.cached);
++		return -EIO;
++	}
++	xcep_mtd->owner = THIS_MODULE;
++	
++	ret = parse_mtd_partitions(xcep_mtd, probes,
++							   &parsed_parts, 0);
++	
++	if (ret > 0)
++		nr_parsed_parts = ret;
++
++
++	if (!xcep_mtd)
++		return ret;
++	
++	if (nr_parsed_parts) {
++		add_mtd_partitions(xcep_mtd, parsed_parts, nr_parsed_parts);
++	} else {
++		printk("Using static partitions on %s\n", xcep_map.name);
++		add_mtd_partitions(xcep_mtd, xcep_partitions, ARRAY_SIZE(xcep_partitions));
++	}
++	return 0;
++}
++
++static void __exit cleanup_xcep(void)
++{
++	if (xcep_mtd) {
++		del_mtd_partitions(xcep_mtd);
++		map_destroy(xcep_mtd);
++		iounmap((void *)xcep_map.virt);
++		if (xcep_map.cached)
++			iounmap(xcep_map.cached);
++	}
++
++	if (parsed_parts)
++		kfree(parsed_parts);
++}
++
++module_init(init_xcep);
++module_exit(cleanup_xcep);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Ales Bardorfer <ales@i-tech.si>");
++MODULE_DESCRIPTION("MTD map driver for Iskratel XCEP");
+diff -Nru linux-2.6.20.1-orig/drivers/net/smc91x.h linux-2.6.20.1/drivers/net/smc91x.h
+--- linux-2.6.20.1-orig/drivers/net/smc91x.h	2007-02-20 07:34:32.000000000 +0100
++++ linux-2.6.20.1/drivers/net/smc91x.h	2007-06-06 16:38:40.171278611 +0200
+@@ -35,6 +35,8 @@
+ #define _SMC91X_H_
+ 
+ 
++/* #define SMC_DEBUG 10 */
++
+ /*
+  * Define your architecture specific bus configuration parameters here.
+  */
+@@ -362,6 +364,27 @@
+ 
+ #define SMC_IRQ_FLAGS		(0)
+ 
++#elif defined(CONFIG_MACH_XCEP)
++
++#define SMC_CAN_USE_8BIT	1
++#define SMC_CAN_USE_16BIT	1
++#define SMC_CAN_USE_32BIT	1
++#define SMC_NOWAIT		1
++#define SMC_USE_PXA_DMA		1
++
++#define SMC_inb(a, r)		readb((a) + (r))
++#define SMC_inw(a, r)		readw((a) + (r))
++#define SMC_inl(a, r)		readl((a) + (r))
++#define SMC_outb(v, a, r)	writeb(v, (a) + (r))
++#define SMC_outw(v, a, r)	writew(v, (a) + (r))
++#define SMC_outl(v, a, r)	writel(v, (a) + (r))
++#define SMC_insl(a, r, p, l)	readsl((a) + (r), p, l)
++#define SMC_outsl(a, r, p, l)	writesl((a) + (r), p, l)
++
++#define RPC_LSA_DEFAULT		RPC_LED_100_10
++#define RPC_LSB_DEFAULT		RPC_LED_TX_RX
++
++
+ #else
+ 
+ #define SMC_CAN_USE_8BIT	1
+diff -Nru linux-2.6.20.1-orig/include/asm-arm/arch-pxa/xcep.h linux-2.6.20.1/include/asm-arm/arch-pxa/xcep.h
+--- linux-2.6.20.1-orig/include/asm-arm/arch-pxa/xcep.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.20.1/include/asm-arm/arch-pxa/xcep.h	2007-06-06 16:38:40.172278693 +0200
+@@ -0,0 +1,87 @@
++/*
++ * linux/include/asm-arm/arch-pxa/xcep.h
++ *
++ * Created 2002/01/10 by Boris Stuhec <boriss@hermes.si>
++ * XCEP customizations by Ales Bardorfer <ales@i-tech.si>
++ *
++ * This file contains the hardware specific definitions for XCEP
++ * Only include this file from SA1100-specific files.
++ *
++ * 
++ */
++#ifndef __ASM_ARCH_XCEP_H
++#define __ASM_ARCH_XCEP_H
++
++#define XCEP_ETH_PHYS	0x0c000300
++#define XCEP_ETH_END    0x0c0fffff
++#define XCEP_ETH_IRQ	0
++
++/*  XCEP CPLD base */
++#define XCEP_CPLD_BASE  0xf0000000
++
++/* CPLD serial select register base */
++#define XCEP_CPLD_SS_BASE XCEP_CPLD_BASE+0x02
++
++/* CPLD serial select register */
++#define XCEP_CPLD_SS (*(volatile unsigned char *)(XCEP_CPLD_SS_BASE))
++#define EVB_ENABLE       (1<<2)
++#define SS1              (1<<1)
++#define SS0              (1<<0)
++
++/* FPGA EVB base */
++#define EVB_FPGA_BASE  0xf1000000
++
++/* FPGA PCMCIA control register base   */
++#define EVB_FPGA_PCCR_BASE  EVB_FPGA_BASE+0xa
++
++/* FPGA PCMCIA status register base   */
++#define EVB_FPGA_PCSR_BASE  EVB_FPGA_BASE+0xc
++
++/* FPGA serial control register base   */
++#define EVB_FPGA_SCR_BASE  EVB_FPGA_BASE+0x12
++
++/* FPGA serial control register */
++#define EVB_FPGA_SCR (*(volatile unsigned short *)(EVB_FPGA_SCR_BASE)) 
++#define CEP_IRDA_MD1	 (1<<2)
++#define CEP_IRDA_MD0	 (1<<1)
++#define CEP_IRDA_FIR_SEL (1<<0)
++
++
++#ifdef CONFIG_SA1100_CEP
++extern void CEP_IRDA_control (unsigned int mask, unsigned int val);
++#else
++#define CEP_IRDA_control(m,s)	do { } while (0)
++#endif
++
++#define CEP_IRDA_set(x)	   CEP_IRDA_control((x), (x))
++#define CEP_IRDA_clear(x)  CEP_IRDA_control((x), 0)
++
++
++/* PCMCIA interface
++ *
++ * Registers
++ * PCSR		Status Register
++ * PCCR		Control Register
++ *
++ */
++#define CEP_GPIO_IRQ		GPIO_GPIO (4)	
++#define CEP_GPIO_CD		GPIO_GPIO (3)	
++#define CEP_IRQ_GPIO_IRQ	IRQ_GPIO4	
++#define CEP_IRQ_GPIO_CD		IRQ_GPIO3 
++#define CEP_BVD1		(1<<4)
++#define CEP_BVD2		(1<<5)
++#define CEP_VS1			(1<<2)
++#define CEP_VS2			(1<<3)
++#define PCMCIA_RESET		(1<<7)
++#define VPPEN1			(1<<12)
++#define VPPEN0			(1<<11)
++#define VCCEN0			(1<<9)
++#define VCCEN1			(1<<10)
++#define nCD			(1<<0)
++#define READY			(1<<1)
++#define INPACK			(1<<2)
++#define RESET_ENABLE		(1<<8)
++#define EVB_FPGA_PCSR (*(volatile unsigned char *)(EVB_FPGA_PCSR_BASE))
++#define EVB_FPGA_PCCR (*(volatile unsigned short *)(EVB_FPGA_PCCR_BASE))	
++#define EVB_FPGA_PCCR_H (*(volatile unsigned char *)(EVB_FPGA_PCCR_H_BASE))
++#endif

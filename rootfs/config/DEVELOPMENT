@@ -1,0 +1,24 @@
+# Settings for debug and development of Libera rootfs.
+
+DROPBEAR_KEYS = y
+
+# Network configuration
+BOOT = nfs
+NETWORK = nfs
+NW_HOSTNAME = TS-DI-EBPM-20
+NW_ADDRESS = 172.23.252.20
+NW_NETMASK = 255.255.240.0
+NW_GATEWAY = 172.23.240.254
+
+# Where to boot from when using nfs boot.
+NFS_SERVER = pc0013
+NFS_ROOTFS = /scratch/mga83/rootfs/libera
+
+# Kernel parameters.
+BOOT_SCRIPT_TARGET = boot-script-libera.image
+KERNEL_ADDR = a0001000
+KERNEL_NAME = uImage-libera
+QUOTE_BOOTARGS = 1
+BOOTARGS = console=$(CONSOLE_TTY),$(CONSOLE_BAUD) mem=64M
+
+TFTP_SERVER = serv3:/tftpboot

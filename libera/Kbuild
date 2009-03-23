@@ -1,0 +1,12 @@
+# DRIVER = libera.ko
+SRCS = libera_main.c libera_cfg.c libera_dd.c libera_adc.c \
+       libera_fa.c libera_sa.c libera_pm.c libera_event.c libera_dsc.c \
+       ebpp.c
+
+OBJS = $(SRCS:%.c=%.o)
+
+#EXTRA_CFLAGS += -std=gnu99
+EXTRA_CFLAGS += -DEBPP -DDEBUG=0
+
+obj-m := libera.o
+libera-objs := $(OBJS)

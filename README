@@ -1,0 +1,70 @@
+This directory collects together components concerned with managing the
+configuration of the Diamond maintained Libera distribution.
+
+The following activities are supported:
+
+ * Building and installing the Diamond Libera rootfs.  This can be used to
+   upgrade an Instrumentation Technologies Libera to the Diamond Libera
+   distribution base, or to update an existing Diamond Libera system.
+
+ * Build Libera kernel.
+
+ * Build Libera device driver.
+
+ * Install and upgrade Libera device driver and FPGA firmware.
+
+ * Install basic scripts and tools needed by Libera process.
+
+
+This package depends on:
+
+ * The DLS rootfs builder package.
+
+ * A built u-boot, providing u-boot.bin and mkimage.
+
+ * Cross compiling toolchains.
+
+This package provides:
+
+ * Libera rootfs.
+
+ * Kernel.  This is build either from locally managed patches on a stock
+   source, or using a specified source tree.
+
+ * Fpga tools: pf, Monitor, fpga_init.
+
+ * Healthd and its associated scripts.
+
+ * MSP430 device driver and firmware.
+
+ * Libera device driver.
+
+ * Diamond distribution installer.  This upgrades any iTech or DLS Libera to
+   the DLS Libera distribution.
+
+ * EBPM installer.  This installs the extra components required to run the
+   Libera EBPM: fpga tools, healthd, msp, Libera device driver. 
+
+
+Distribution Installer.
+
+ * Upgrades from iTech 1.46, 1.60-1.80, 2.00+ or DLS Libera to DLS Libera.
+
+ * Installs u-boot, kernel, rootfs.
+
+ * Optionally runs EBPM installer?  Maybe a separate step.
+
+The installer should retain the following settings across the install:
+
+ * Network configuration: ip, mask, gateway, hostname or dhcp.
+
+ * /root/.ssh/authorized_keys
+
+ * Server identification keys.  Will need to run dropbearconvert on openssh
+   keys.
+
+
+Notes:
+
+Need to copy rootfs and other structures: top level make file with separate
+configuration to locate the external dependencies.

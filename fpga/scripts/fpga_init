@@ -1,0 +1,193 @@
+#!/bin/sh
+#
+# $Id: fpga_init 2192 2008-10-07 09:13:06Z matejk $
+#
+# fpga_init - Initialize Libera FPGA design.
+#
+#
+# Copyright (C) 2004-2006 Instrumentation Technologies
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+# or visit http://www.gnu.org
+
+
+PATH=$PATH:/opt/bin/
+
+# Get Libera configuration
+CONFIG="/etc/default/libera"
+if [ ! -f $CONFIG ]; then
+    echo "Libera configuration file not found: $CONFIG"
+fi
+. $CONFIG
+
+
+# Usage
+function usage()
+{
+    echo "Usage: $0  NCLK_ADC (No. of ADC cmd repetitions)"
+}
+
+# Arguments sanity check
+[ $# -ne 1 ] && {
+    usage
+    exit -1
+}
+NCLK_ADC=$1
+
+[ $NCLK_ADC -lt 0 ] && {
+    echo "NCLK_ADC must be positive."
+    exit -1
+}
+
+# Libera Brilliance (pre)initialization
+libera_brilliance_init()
+{
+sleep 1
+
+### ./init_AD9510_analog_bs.scr
+Monitor  0x1400403C w 0x0000BD
+Monitor  0x1400403C w 0x000099
+                 
+#sleep 0.5       
+########### OUT0 on ############
+Monitor  0x1400403C w 0x003c08
+######### OUT1 on ##############
+Monitor  0x1400403C w 0x003D08	
+########## OUT2 on #############
+Monitor  0x1400403C w 0x003E08
+########## OUT3 on #############
+Monitor  0x1400403C w 0x003F08
+########## update ##############
+Monitor  0x1400403C w 0x005a01
+######### OUT4 off #############
+Monitor  0x1400403C w 0x004003
+######### OUT5 off #############
+Monitor  0x1400403C w 0x004102
+######### CLK select ###########
+[ $DTYPE == "bo" ] && {
+    Monitor  0x1400403C w 0x00451d
+} || {
+    Monitor  0x1400403C w 0x00451a
+}
+                 
+                 
+######### Divider 0 config #####
+Monitor  0x1400403C w 0x004811
+Monitor  0x1400403C w 0x004980
+######### Divider 1 config #####
+Monitor  0x1400403C w 0x004a11
+Monitor  0x1400403C w 0x004b81
+######### Divider 2 config #####
+Monitor  0x1400403C w 0x004c11
+Monitor  0x1400403C w 0x004d82
+######### Divider 3 config #####
+Monitor  0x1400403C w 0x004e11
+Monitor  0x1400403C w 0x004f83
+######### Divider 5 config #####
+Monitor  0x1400403C w 0x005211
+Monitor  0x1400403C w 0x005380  # 01 for 500MHz
+                 
+                 
+######### Fine delay on ########
+Monitor  0x1400403C w 0x003401  # 01 Bypass
+#sleep 0.1       
+######### Delay full scale #####
+Monitor  0x1400403C w 0x003500
+#sleep 0.1       
+######### Fine delay adjust ####
+Monitor  0x1400403C w 0x003607  # 07
+#sleep 0.1       
+                 
+Monitor  0x1400403C w 0x005805
+Monitor  0x1400403C w 0x005a01
+#sleep 0.5       
+                 
+                 
+Monitor  0x1400403C w 0x005801
+Monitor  0x1400403C w 0x005a01
+#sleep 0.1       
+
+
+# ADC DCM reset
+Monitor 0x1400402c w 0x01
+sleep 0.1
+Monitor 0x1400402c w 0x00
+
+sleep 0.5
+}
+
+
+# FPGA design must be loaded before this script.
+# This is done elsewhere (/etc/init.d/libera)
+
+# Libera Brilliance specific (pre)initialization 
+let FEATURE=`Monitor 0x1400001C r`
+let INSTRUMENT=$(( FEATURE & 0xff000000 ))
+[ $INSTRUMENT == 16777216 ] && {
+    libera_brilliance_init
+} 
+
+# ADC clock
+while [ $NCLK_ADC -gt 0 ];
+do
+    # 2 deg ADC shift
+    Monitor 0x1400402c w 0x2
+    NCLK_ADC=$(( $NCLK_ADC - 1 ))
+done
+
+sleep 1
+
+# Initialize SDRAM
+Monitor 0x14018010 w 0
+Monitor 0x14018010 w 0
+Monitor 0x14018010 w 0
+Monitor 0x14018010 w 0x10400
+Monitor 0x14018010 w 0x20000
+Monitor 0x14018010 w 0x20000
+Monitor 0x14018010 w 0x20000
+Monitor 0x14018010 w 0x30033
+Monitor 0x14018014 w 0x1
+
+# Set SW mode (digital SW = auto)
+Monitor 0x1400C000 w 0x2
+
+# IL_K_FILT_XY
+Monitor 0x1402401c w $IL_K_FILT_XY
+
+# IL_K_FILT_ADC_OVERFLOW
+Monitor 0x1400c034 w $IL_K_FILT_ADC_OVERFLOW
+
+# Select DSC switching source
+# Bit 31: 0x80000000 = 2147483648
+SW_EXT="-2147483648"
+TBT_DIVIDER_REG=$(( $NTBT - 1 ))
+[ "$SWITCHING_SOURCE" = "external" ] && {
+    TBT_DIVIDER_REG=$(( $TBT_DIVIDER_REG + $SW_EXT ))
+}
+Monitor 0x1400c038 w $TBT_DIVIDER_REG
+
+# Set DSC switching delay/phase
+Monitor 0x1400c03c w $SWITCHING_DELAY
+
+
+# Initialize accelerator specifics
+[ -x /opt/bin/fpga_init_specific ] && {
+    /opt/bin/fpga_init_specific
+}
+
+exit 0
+
+# Driver should be loaded next.
+# This is done elsewhere (/etc/init.d/libera)
