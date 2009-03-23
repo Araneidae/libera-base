@@ -99,12 +99,12 @@ MODULE_SUPPORTED_DEVICE("msp");
 
 
 #define CPLD_IOBASE         0x10000000
-#define MSP_RESET_OFFSET    0xe
+#define MSP_RESET_OFFSET    0xE
 #define MSP_RESET_BASE      (CPLD_IOBASE + MSP_RESET_OFFSET)
 
 
 
-/* MSP reset control bits */
+/* MSP reset control bits. */
 #define MRR_PGM      0x04
 #define MRR_TCK      0x02
 #define MRR_NMI      0x01
@@ -145,13 +145,13 @@ static void msp_delay_jiffies(int delay_jiff)
 /* Reset MSP */
 static void msp_reset(void)
 {
-    iowrite32((MRR_PGM | MRR_TCK) & ~MRR_NMI, msp_reset_register);
+    iowrite8((MRR_PGM | MRR_TCK) & ~MRR_NMI, msp_reset_register);
     msp_delay_jiffies(1);
 
-    iowrite32(MRR_PGM | MRR_TCK | MRR_NMI, msp_reset_register);
+    iowrite8(MRR_PGM | MRR_TCK | MRR_NMI, msp_reset_register);
     msp_delay_jiffies(1);
 
-    iowrite32((MRR_NMI | MRR_TCK) & ~MRR_PGM, msp_reset_register);
+    iowrite8((MRR_NMI | MRR_TCK) & ~MRR_PGM, msp_reset_register);
     msp_delay_jiffies(1);
 }
 
@@ -239,14 +239,14 @@ static int initialise_msp(void)
     }
     /* Next, I/O memory resource allocation.  We only need the MSP reset
      * register. */
-    if (request_mem_region(MSP_RESET_BASE, 4, "msp") == NULL)
+    if (request_mem_region(MSP_RESET_BASE, 1, "msp") == NULL)
     {
         printk(KERN_ERR "Unable to allocate MSP reset register\n");
         ret = -ENODEV;
         goto no_region;
     }
     /* Map the reset register. */
-    msp_reset_register = ioremap_nocache(MSP_RESET_BASE, 4);
+    msp_reset_register = ioremap_nocache(MSP_RESET_BASE, 1);
     if (msp_reset_register == NULL)
     {
         printk(KERN_ERR "Unable to remap MSP reset register\n");
@@ -288,7 +288,7 @@ no_ssp:
 static void uninitialise_msp(void)
 {
     iounmap(msp_reset_register);
-    release_mem_region(MSP_RESET_BASE, 4);
+    release_mem_region(MSP_RESET_BASE, 1);
     ssp_exit(&ssp);
 }
 
