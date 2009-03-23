@@ -5,4 +5,3 @@ EXTRA_CFLAGS += -Wno-missing-field-initializers
 
 obj-m := msp.o
 msp-objs := msp_main.o
-# msp-objs := simple.o
