@@ -88,21 +88,21 @@ static inline void flushCircBuf(struct libera_circbuf* const q)
 
 /* LST should always be put to CircBuf first! -> Check interrupt priority! */
 static inline void putLSTtoCircBuf(struct libera_circbuf* const q, 
-				   const libera_hw_time_t *lst)
+                                   const libera_hw_time_t *lst)
 {
     q->stamp[q->put].lst = *lst;    
 }
 
 /* LMT should always be put to CircBuf last! -> Check interrupt priority! */
 static inline void putLMTtoCircBuf(struct libera_circbuf* const q,
-				   const libera_hw_time_t *lmt)
+                                   const libera_hw_time_t *lmt)
 {
     q->stamp[q->put].lmt = *lmt;
     q->put = ((q->put + 1) & TRIG_LOG_MASK);
 }
 
 static inline void putToCircBuf(struct libera_circbuf* const q,
-				const libera_Ltimestamp_t *data)
+                                const libera_Ltimestamp_t *data)
 {
     q->stamp[q->put] = *data;
     q->put = ((q->put + 1) & TRIG_LOG_MASK);
@@ -168,15 +168,15 @@ static inline int putToDMA_FIFO(libera_dma_t *q, unsigned int size_atoms)
 {
     register int index;
     if((index=((q->put + size_atoms) & LIBERA_DMA_FIFO_MASK)) == q->get)
-	{
-	    return -1;  /* fifo would overflow */
-	}
+        {
+            return -1;  /* fifo would overflow */
+        }
     else
-	{
-	    /* Only change the index as DMA copies the data */
-	    q->put = index;
-	    return 0;
-	}
+        {
+            /* Only change the index as DMA copies the data */
+            q->put = index;
+            return 0;
+        }
 }
 
 

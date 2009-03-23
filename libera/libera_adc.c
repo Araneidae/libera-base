@@ -47,15 +47,15 @@ static int
 libera_adc_open(struct inode *inode, struct file *file)
 {
     struct libera_adc_device *dev =
-	(struct libera_adc_device *) file->private_data;
+        (struct libera_adc_device *) file->private_data;
     
     if (!dev) return -ENODEV;
 
     mutex_lock(&dev->sem);
     /* We do not allow writing */
     if (file->f_mode & FMODE_WRITE) {
-	mutex_unlock(&dev->sem);
-	return -EACCES;
+        mutex_unlock(&dev->sem);
+        return -EACCES;
     }
 
     /* Is it the first open() for reading */
@@ -63,7 +63,7 @@ libera_adc_open(struct inode *inode, struct file *file)
     dev->readers++;
     
     PDEBUG3("Opened libera.dd device: readers=%d, writers=%d\n",
-	    dev->readers, dev->writers);
+            dev->readers, dev->writers);
 
     dev->open_count++; /* internal counter */
     mutex_unlock(&dev->sem);
@@ -83,7 +83,7 @@ static int
 libera_adc_release(struct inode *inode, struct file *file)
 {
     struct libera_adc_device *dev =
-	(struct libera_adc_device *) file->private_data;
+        (struct libera_adc_device *) file->private_data;
 
 
     dev->open_count--; /* internal counter */
@@ -94,7 +94,7 @@ libera_adc_release(struct inode *inode, struct file *file)
 
 
     PDEBUG3("Closed libera.dd device: readers=%d, writers=%d\n",
-	    dev->readers, dev->writers);
+            dev->readers, dev->writers);
 
     return 0; /* success */
 }
@@ -117,7 +117,7 @@ libera_adc_llseek(struct file *file, loff_t time, int whence)
     case 0: /* SEEK_SET */
     case 1: /* SEEK_CUR */
     case 2: /* SEEK_END */
-	break;
+        break;
 
     default: /* can't happen */
         return -EINVAL;
@@ -147,7 +147,7 @@ static ssize_t
 libera_adc_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
 {
     struct libera_adc_device *dev =
-    	(struct libera_adc_device *) file->private_data;
+        (struct libera_adc_device *) file->private_data;
 
     ssize_t ret = 0;
     unsigned long span_atoms;
@@ -162,37 +162,37 @@ libera_adc_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
 
     /* Lock the whole device */
     if (mutex_lock_interruptible(&dev->sem))
-	return -ERESTARTSYS;
+        return -ERESTARTSYS;
 
     /* Sanity check regarding count */
     if (count > (LIBERA_ADC_BUFFER_ATOMS*sizeof(libera_atom_adc_t) )) {
-	PDEBUG("ADC: read(): Parameter count too big.\n");
-	ret = -EINVAL;
-	goto out;
+        PDEBUG("ADC: read(): Parameter count too big.\n");
+        ret = -EINVAL;
+        goto out;
     }
 
     /* Filter out strange, non-atomically-dividable values. */
     if (count % sizeof(libera_atom_adc_t)) {
-	PDEBUG("ADC: read(): Inapropriate count size.\n");
-    	ret = -EINVAL;
-	goto out;
+        PDEBUG("ADC: read(): Inapropriate count size.\n");
+        ret = -EINVAL;
+        goto out;
     }
     span_atoms = count/sizeof(libera_atom_adc_t);
     
     /* Read to internal buffer */
     for (i=0; i < LIBERA_ADC_BUFFER_ATOMS; i++) {
         /* Channels C & D */
-	PDEBUG3("ReadingCD(%lu) from %p to %p\n", i, 
-	       (unsigned long *)(ADC_CHAN_CD + i*sizeof(unsigned long)),
-	       ((unsigned long *)(dev->buf + i)));
+        PDEBUG3("ReadingCD(%lu) from %p to %p\n", i, 
+               (unsigned long *)(ADC_CHAN_CD + i*sizeof(unsigned long)),
+               ((unsigned long *)(dev->buf + i)));
         *((unsigned long *)(dev->buf + i)) =
-	  readl(iobase + ADC_CHAN_CD + i*sizeof(unsigned long));
+          readl(iobase + ADC_CHAN_CD + i*sizeof(unsigned long));
         /* Channels A & B */
         PDEBUG3("ReadingAB(%lu) from %p to %p\n", i, 
-	       (unsigned long *)(ADC_CHAN_AB + i*sizeof(unsigned long)),
-	       (unsigned long *)(dev->buf + i) + 1);
-	*((unsigned long *)(dev->buf + i) + 1) =
-	  readl(iobase + ADC_CHAN_AB + i*sizeof(unsigned long));
+               (unsigned long *)(ADC_CHAN_AB + i*sizeof(unsigned long)),
+               (unsigned long *)(dev->buf + i) + 1);
+        *((unsigned long *)(dev->buf + i) + 1) =
+          readl(iobase + ADC_CHAN_AB + i*sizeof(unsigned long));
         /* Perform data transformation */
         atom = (dev->buf + i);
         if (dev->op) {
@@ -206,16 +206,16 @@ libera_adc_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
     /* Copy to userland */
     for (i=0; i < span_atoms; i++) {
         if (copy_to_user(buf, dev->buf + i, sizeof(libera_atom_adc_t)))
-	    return -EFAULT;
-	else
-	{
-	    buf += sizeof(libera_atom_adc_t);
-	    ret += sizeof(libera_atom_adc_t);
-	}
+            return -EFAULT;
+        else
+        {
+            buf += sizeof(libera_atom_adc_t);
+            ret += sizeof(libera_atom_adc_t);
+        }
     }
 
     PDEBUG3("ADC (%p): Read %lu atoms (%lu bytes)\n", 
-	    file, span_atoms, (unsigned long)ret);
+            file, span_atoms, (unsigned long)ret);
     
  out:
     mutex_unlock(&dev->sem);
@@ -229,7 +229,7 @@ libera_adc_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
  */
 struct file_operations libera_adc_fops = {
     owner:          THIS_MODULE,
-    llseek:	    libera_adc_llseek,
+    llseek:         libera_adc_llseek,
     read:           libera_adc_read,
     open:           libera_adc_open,
     release:        libera_adc_release

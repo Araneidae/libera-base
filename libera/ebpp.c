@@ -41,18 +41,18 @@ or visit http://www.gnu.org
 
 extern int
 getBlockedFromFIFO(struct libera_fifo* const q,
-		   wait_queue_head_t* const wq,
-		   libera_hw_time_t *time);
+                   wait_queue_head_t* const wq,
+                   libera_hw_time_t *time);
 
 extern void 
 libera_dma_get_DMAC_csize(libera_dma_t *dma);
 
 extern int 
 libera_sctrig_enable(struct libera_event_device * dev,
-		     const unsigned long mask);
+                     const unsigned long mask);
 extern int 
 libera_mctrig_enable(struct libera_event_device * dev,
-		     const unsigned long mask);
+                     const unsigned long mask);
 
 
 /** Global Libera description */
@@ -71,8 +71,8 @@ libera_desc_t libera_desc = {
  */
 static ssize_t
 libera_dd_write_CBfifo(size_t cb_StartAddr, 
-		       size_t cb_NoAtoms,
-		       unsigned long decimation)
+                       size_t cb_NoAtoms,
+                       unsigned long decimation)
 {
     ssize_t ret = 0;
     unsigned long cb_FiltDec;
@@ -90,19 +90,19 @@ libera_dd_write_CBfifo(size_t cb_StartAddr,
     if (cb_NoAtoms > DD_MAX_NOATOMS)
     {
         PDEBUG("DD: (cbFIFO cmd): Maximum No. of atoms exceeded (%lu>%d).\n",
-	       (unsigned long)cb_NoAtoms, DD_MAX_NOATOMS);
-	return -EINVAL;
+               (unsigned long)cb_NoAtoms, DD_MAX_NOATOMS);
+        return -EINVAL;
     }
 
     cbFIFO_H = 
-	( (cb_FiltDec & ((1 << DD_CBH_FDEC_WIDTH)-1)) << DD_CBH_FDEC_LSB ) |
-	(cb_StartAddr & ((1 << DD_CBH_SADDR_WIDTH)-1));
+        ( (cb_FiltDec & ((1 << DD_CBH_FDEC_WIDTH)-1)) << DD_CBH_FDEC_LSB ) |
+        (cb_StartAddr & ((1 << DD_CBH_SADDR_WIDTH)-1));
     cbFIFO_L = 
-	( (cb_NoAtoms & ((1 << DD_CBL_NOAT_WIDTH)-1)) << DD_CBL_NOAT_LSB );
+        ( (cb_NoAtoms & ((1 << DD_CBL_NOAT_WIDTH)-1)) << DD_CBL_NOAT_LSB );
     
     PDEBUG3("cbFIFO = 0x%08lx%08lx\n", 
-	    (unsigned long)cbFIFO_H, 
-	    (unsigned long)cbFIFO_L);
+            (unsigned long)cbFIFO_H, 
+            (unsigned long)cbFIFO_L);
 
     /* Write to  CB FIFO */
     writel(cbFIFO_H, iobase + DD_CB_FIFO_H);
@@ -594,7 +594,7 @@ int libera_init_specific(void)
     dev_cfg->param[LIBERA_CFG_ILK_GAIN_LIMIT] = 
         LIBERA_IS_BRILLIANCE(lgbl.feature) ?
         ((unsigned int) -40 << 16) | (0+0) :
-	((unsigned int) -40 << 16) | (16+16);
+        ((unsigned int) -40 << 16) | (16+16);
 
     // fix for bug 157,380
     readl(iobase + ADC_MAX);
@@ -622,11 +622,11 @@ int libera_init_specific(void)
 
     /* FPGA/HW init */
     for (i=LIBERA_CFG_CUSTOM_FIRST; i < LIBERA_CFG_CUSTOM_LAST; i++) {
-	libera_cfg_request_t req;
-	
-	req.idx = i;
-	req.val = dev_cfg->param[i];
-	libera_cfg_set_specific(dev_cfg, &req);
+        libera_cfg_request_t req;
+        
+        req.idx = i;
+        req.val = dev_cfg->param[i];
+        libera_cfg_set_specific(dev_cfg, &req);
     }
 
 
@@ -655,9 +655,9 @@ libera_valid_trigger(struct libera_event_device *event,
 /** Libera EBPP specific SC trigger handler */
 void 
 libera_SCtrig_specific(struct libera_event_device *event,
-		       const libera_hw_time_t *stamp,
-		       const libera_hw_time_t *stamp_raw,
-		       unsigned long m, unsigned int i)
+                       const libera_hw_time_t *stamp,
+                       const libera_hw_time_t *stamp_raw,
+                       unsigned long m, unsigned int i)
 {
     struct libera_cfg_device *cfg = &libera_cfg;
     switch(i) 
@@ -665,61 +665,61 @@ libera_SCtrig_specific(struct libera_event_device *event,
     case T_TRIG_MC_PRESCALER: // ..._MC_PRES... is not an error here!
     case T_TRIG_SC_PRESCALER:
         if (putToFIFO(& event->sc_timestamps[i], *stamp_raw) < 0 && 
-	    (event->sc_trigVec & m)) //this should never happen
-	  printk(KERN_CRIT "libera: SC irq: FIFO %d overflow.\n",i);
-	break;
+            (event->sc_trigVec & m)) //this should never happen
+          printk(KERN_CRIT "libera: SC irq: FIFO %d overflow.\n",i);
+        break;
 
     case T_TRIG_POST_MORTEM:
-	/* Insert the last PM piece and leave the rest for PM tasklet */
-	if (!cfg->pm_freezed)
-	    putLSTtoCircBuf(&event->paired_timestamps[i], stamp);
+        /* Insert the last PM piece and leave the rest for PM tasklet */
+        if (!cfg->pm_freezed)
+            putLSTtoCircBuf(&event->paired_timestamps[i], stamp);
         break;
       
     default:
         if (putToFIFO(& event->sc_timestamps[i], *stamp) < 0 && 
-	    (event->sc_trigVec & m)) //this should never happen
-	  printk(KERN_CRIT "libera: SC irq: FIFO %d overflow.\n",i);
+            (event->sc_trigVec & m)) //this should never happen
+          printk(KERN_CRIT "libera: SC irq: FIFO %d overflow.\n",i);
     }
 }
 
 /** Libera EBPP specific MC trigger handler */
 void 
 libera_MCtrig_specific(struct libera_event_device *event,
-		       const libera_hw_time_t *stamp,
-		       const libera_hw_time_t *stamp_raw,
-		       unsigned long m, unsigned int i)
+                       const libera_hw_time_t *stamp,
+                       const libera_hw_time_t *stamp_raw,
+                       unsigned long m, unsigned int i)
 {
     struct libera_cfg_device *cfg = &libera_cfg;
     switch(i) 
     {
     case T_TRIG_POST_MORTEM:
-	if (!cfg->pm_freezed) {
-	    /* Insert the last PM piece and leave the rest for PM tasklet */
-	    putLMTtoCircBuf(&event->paired_timestamps[i], stamp);
-	    /* Notify userland about PM event */
-	    PDEBUG3("POST PORTEM: LMT = 0x%08lx%08lx, j = %lu\n",
-		    ULL(*stamp), jiffies);
-	    libera_send_event(LIBERA_EVENT_PM, pmsize);
-	    // freeze PM buffer for mode 1 and 2, overwrite for 0
-	    if ( cfg->param[LIBERA_CFG_PM_MODE] ) {
-		cfg->pm_freezed = 1;
-	    }
-	}
-	else
-	    PDEBUG2("PM buffer frozen, skipped event and acquisition.\n");
-	break;
+        if (!cfg->pm_freezed) {
+            /* Insert the last PM piece and leave the rest for PM tasklet */
+            putLMTtoCircBuf(&event->paired_timestamps[i], stamp);
+            /* Notify userland about PM event */
+            PDEBUG3("POST PORTEM: LMT = 0x%08lx%08lx, j = %lu\n",
+                    ULL(*stamp), jiffies);
+            libera_send_event(LIBERA_EVENT_PM, pmsize);
+            // freeze PM buffer for mode 1 and 2, overwrite for 0
+            if ( cfg->param[LIBERA_CFG_PM_MODE] ) {
+                cfg->pm_freezed = 1;
+            }
+        }
+        else
+            PDEBUG2("PM buffer frozen, skipped event and acquisition.\n");
+        break;
 
     case T_TRIG_MC_PRESCALER:
-	if (putToFIFO(& event->mc_timestamps[i], 
-		      *stamp_raw - event->settime.lmt.off_pll) < 0 && 
-	    (event->mc_trigVec & m)) //this should never happen
-	    printk(KERN_CRIT "libera: MC irq: FIFO %d overflow.\n",i);
-	break;
-	
+        if (putToFIFO(& event->mc_timestamps[i], 
+                      *stamp_raw - event->settime.lmt.off_pll) < 0 && 
+            (event->mc_trigVec & m)) //this should never happen
+            printk(KERN_CRIT "libera: MC irq: FIFO %d overflow.\n",i);
+        break;
+        
     default:
-	if (putToFIFO(& event->mc_timestamps[i], *stamp) < 0 && 
-	    (event->mc_trigVec & m)) //this should never happen
-	    printk(KERN_CRIT "libera: MC irq: FIFO %d overflow.\n",i);
+        if (putToFIFO(& event->mc_timestamps[i], *stamp) < 0 && 
+            (event->mc_trigVec & m)) //this should never happen
+            printk(KERN_CRIT "libera: MC irq: FIFO %d overflow.\n",i);
     }
 }
 
@@ -740,24 +740,24 @@ libera_mchelp_handler_specific(struct libera_event_device  *event)
 
     /* Start HB at appropriate time -- simple event generation */
     if ( ((event->mc_time + 0x4000000ULL) <= event->list.head->time ) &&
-	 ( (event->mc_time + 0x8000000ULL) > event->list.head->time ) ) {
-	libera_hw_time_t offset26;
+         ( (event->mc_time + 0x8000000ULL) > event->list.head->time ) ) {
+        libera_hw_time_t offset26;
 
-	offset26 = event->list.head->time - (event->mc_time + 0x4000000ULL);
-	DEBUG2_ONLY(
-		    if (offset26 >= 0x4000000ULL)
-		    PDEBUG2("VERY STRANGE: offset26 >= 0x4000000ULL\n");
-		    );
-	if (offset26 < 0x2000000ULL) {
-	    // Schedule event
-	    writel(event->list.head->event,
-		   iobase + T_MC_EVENTGENL);
-	    writel((unsigned long)(offset26 & 0x00000000FFFFFFFFULL),
-		   iobase + T_MC_EVENTGENH);
-	    PDEBUG("HELPER #%lu: EVGEN: 0x%08lx: offset26 = 0x%08lx\n", count,
+        offset26 = event->list.head->time - (event->mc_time + 0x4000000ULL);
+        DEBUG2_ONLY(
+                    if (offset26 >= 0x4000000ULL)
+                    PDEBUG2("VERY STRANGE: offset26 >= 0x4000000ULL\n");
+                    );
+        if (offset26 < 0x2000000ULL) {
+            // Schedule event
+            writel(event->list.head->event,
+                   iobase + T_MC_EVENTGENL);
+            writel((unsigned long)(offset26 & 0x00000000FFFFFFFFULL),
+                   iobase + T_MC_EVENTGENH);
+            PDEBUG("HELPER #%lu: EVGEN: 0x%08lx: offset26 = 0x%08lx\n", count,
                    event->list.head->event,
-		   (unsigned long)(offset26 & 0x00000000FFFFFFFFULL));
-	} 
+                   (unsigned long)(offset26 & 0x00000000FFFFFFFFULL));
+        } 
     }
 }
 
@@ -833,7 +833,7 @@ libera_sa_handler_specific(void)
 
     /* Check for Input Overrun */
     if (SA_INOVR(FIFOstatus))
-	dev->inputovr = TRUE;
+        dev->inputovr = TRUE;
 
     /* Read all the available atoms from FIFO.
      * Reading in one block (multiple atoms) for greater efficiency is 
@@ -842,42 +842,42 @@ libera_sa_handler_specific(void)
      */
     do
     {
-	DEBUG3_ONLY(
-	    if ( !(lcount++ % 10) ) {
-		PDEBUG3("Reading from %p and %p\n", 
-			(unsigned long *)dev->buf_head,
-			(unsigned long *)dev->buf_head +
-			sizeof(libera_atom_sa_t)/sizeof(unsigned long)/2);
-	    }
-	    );
-	/* Read SA data first */
-	libera_readlBlock((unsigned long *)(iobase + SA_FIFO_BASE),
-			  (unsigned long *)dev->buf_head,
-			  (sizeof(libera_atom_sa_t)/sizeof(unsigned long))/2);
-	/* Add FAI additional 8 integers */
-	libera_readlBlock((unsigned long *)(iobase + FAI_CORR_BASE),
-			  (unsigned long *)(dev->buf_head) + 
-			  sizeof(libera_atom_sa_t)/sizeof(unsigned long)/2,
-			  (sizeof(libera_atom_sa_t)/sizeof(unsigned long))/2);
-	libera_sa_incr_atom(&dev->buf_head);
+        DEBUG3_ONLY(
+            if ( !(lcount++ % 10) ) {
+                PDEBUG3("Reading from %p and %p\n", 
+                        (unsigned long *)dev->buf_head,
+                        (unsigned long *)dev->buf_head +
+                        sizeof(libera_atom_sa_t)/sizeof(unsigned long)/2);
+            }
+            );
+        /* Read SA data first */
+        libera_readlBlock((unsigned long *)(iobase + SA_FIFO_BASE),
+                          (unsigned long *)dev->buf_head,
+                          (sizeof(libera_atom_sa_t)/sizeof(unsigned long))/2);
+        /* Add FAI additional 8 integers */
+        libera_readlBlock((unsigned long *)(iobase + FAI_CORR_BASE),
+                          (unsigned long *)(dev->buf_head) + 
+                          sizeof(libera_atom_sa_t)/sizeof(unsigned long)/2,
+                          (sizeof(libera_atom_sa_t)/sizeof(unsigned long))/2);
+        libera_sa_incr_atom(&dev->buf_head);
 
-	DEBUG_ONLY(
-		   rcount++;
-		   if (rcount > 1) {
-		       PDEBUG("SA IRQ: Read %ux8 ints.\n", rcount);
-		   }
-		   );
+        DEBUG_ONLY(
+                   rcount++;
+                   if (rcount > 1) {
+                       PDEBUG("SA IRQ: Read %ux8 ints.\n", rcount);
+                   }
+                   );
 
-	/* Refresh status */
-	FIFOstatus = readl(iobase + SA_STATUS);
-	PDEBUG3("SA status (loop #%u) = 0x%08x\n", count, FIFOstatus);
+        /* Refresh status */
+        FIFOstatus = readl(iobase + SA_STATUS);
+        PDEBUG3("SA status (loop #%u) = 0x%08x\n", count, FIFOstatus);
 
-	/* Check for Input Overrun */
-	if (SA_INOVR(FIFOstatus))
-	    dev->inputovr = TRUE;
+        /* Check for Input Overrun */
+        if (SA_INOVR(FIFOstatus))
+            dev->inputovr = TRUE;
 
-	/* Deadlock avoidance */
-	DEBUG2_ONLY(if (count++ > 10) return;);
+        /* Deadlock avoidance */
+        DEBUG2_ONLY(if (count++ > 10) return;);
     } while(SA_SIZE(FIFOstatus));
 }
 
@@ -903,38 +903,38 @@ void libera_sa_do_tasklet_specific(unsigned long data)
     /* FIFO Input Overrun check */
     if (dev->inputovr)
     {
-	dev->inputovr = FALSE;
-	PDEBUG("WARNING: FPGA SA buffer overflow.\n");
-	libera_send_event(LIBERA_EVENT_OVERFLOW,
-			  LIBERA_OVERFLOW_SA_FPGA);
+        dev->inputovr = FALSE;
+        PDEBUG("WARNING: FPGA SA buffer overflow.\n");
+        libera_send_event(LIBERA_EVENT_OVERFLOW,
+                          LIBERA_OVERFLOW_SA_FPGA);
     }
 
     do 
     {
-	/* Dispatch data to SA pipes */
-	for (pipe_no = 0; pipe_no < LIBERA_SA_MAX_READERS; pipe_no++) {
-	    if (dev->pipe.sa_pipe[pipe_no])
-	    {
-		/* We need to wake up the reader as libera_pipe_write() 
-		 * does not take care of that already. 
-		 */
-		ret = libera_pipe_write(dev->pipe.sa_pipe[pipe_no], 
-					(char *)(dev->buf_tail), 
-					sizeof(libera_atom_sa_t));
-		if (ret == -EFAULT) {
-		    PDEBUG("WARNING: buffer overflow in SA pipe #%d\n", 
-			   pipe_no);
-		    libera_send_event(LIBERA_EVENT_OVERFLOW, 
-				      LIBERA_OVERFLOW_SA_DRV);
-		}
-		else {
-			wake_up_interruptible(&dev->pipe.sa_pipe[pipe_no]->wait);
-		}    
-	   }
-	}
-	/* Increment buffer tail pointer */
-	libera_sa_incr_atom(&dev->buf_tail);
-	libera_send_event(LIBERA_EVENT_SA, 1);
+        /* Dispatch data to SA pipes */
+        for (pipe_no = 0; pipe_no < LIBERA_SA_MAX_READERS; pipe_no++) {
+            if (dev->pipe.sa_pipe[pipe_no])
+            {
+                /* We need to wake up the reader as libera_pipe_write() 
+                 * does not take care of that already. 
+                 */
+                ret = libera_pipe_write(dev->pipe.sa_pipe[pipe_no], 
+                                        (char *)(dev->buf_tail), 
+                                        sizeof(libera_atom_sa_t));
+                if (ret == -EFAULT) {
+                    PDEBUG("WARNING: buffer overflow in SA pipe #%d\n", 
+                           pipe_no);
+                    libera_send_event(LIBERA_EVENT_OVERFLOW, 
+                                      LIBERA_OVERFLOW_SA_DRV);
+                }
+                else {
+                        wake_up_interruptible(&dev->pipe.sa_pipe[pipe_no]->wait);
+                }    
+           }
+        }
+        /* Increment buffer tail pointer */
+        libera_sa_incr_atom(&dev->buf_tail);
+        libera_send_event(LIBERA_EVENT_SA, 1);
     } while (dev->buf_tail != dev->buf_head);
 }
 
@@ -976,67 +976,67 @@ libera_dd_llseek_specific(struct file *file, loff_t time, int whence)
 
     switch(whence) {
     case 0: /* SEEK_SET */
-	/* Interval starting time given in System Time (ST) */
-	Qts->request = LIBERA_DD_TIME_EXPLICIT_ST;
-	DEBUG3_ONLY(
-	{
-	    unsigned long timeh;
-	    unsigned long timel;
-	    timeh = time >> 32;
-	    timel = time & (unsigned long long) 0x00000000FFFFFFFFULL;
-	    PDEBUG2("llseek(): timeh = 0x%08lx\n", timeh);
-	    PDEBUG2("llseek(): timel = 0x%08lx\n", timel);
-	});
-	/* "Current time" special request */
-	if (time == 0ULL)
-	{
-	    ret = libera_get_CTIME(&ctime);
-	    if (ret) return ret;
-	    Qts->L.lst = ctime.lst;
-	    lst2st(&(Qts->L.lst), &(Qts->U.st));
-	}
-	else
-	{
-	    memcpy(&(Qts->U.st), (struct timespec *)&time, 
-		   sizeof(struct timespec));
-	    st2lst(&(Qts->U.st), &(Qts->L.lst));
-	}
+        /* Interval starting time given in System Time (ST) */
+        Qts->request = LIBERA_DD_TIME_EXPLICIT_ST;
+        DEBUG3_ONLY(
+        {
+            unsigned long timeh;
+            unsigned long timel;
+            timeh = time >> 32;
+            timel = time & (unsigned long long) 0x00000000FFFFFFFFULL;
+            PDEBUG2("llseek(): timeh = 0x%08lx\n", timeh);
+            PDEBUG2("llseek(): timel = 0x%08lx\n", timel);
+        });
+        /* "Current time" special request */
+        if (time == 0ULL)
+        {
+            ret = libera_get_CTIME(&ctime);
+            if (ret) return ret;
+            Qts->L.lst = ctime.lst;
+            lst2st(&(Qts->L.lst), &(Qts->U.st));
+        }
+        else
+        {
+            memcpy(&(Qts->U.st), (struct timespec *)&time, 
+                   sizeof(struct timespec));
+            st2lst(&(Qts->U.st), &(Qts->L.lst));
+        }
         break;
 
     case 1: /* SEEK_CUR */
-	/* Interval starting time given in Machine Time (MT) */
-	Qts->request = LIBERA_DD_TIME_EXPLICIT_MT;
-	DEBUG3_ONLY(
-	{
-	    unsigned long timeh;
-	    unsigned long timel;
-	    timeh = time >> 32;
-	    timel = time & (unsigned long long) 0x00000000FFFFFFFFULL;
-	    PDEBUG2("llseek(): timeh = 0x%08lx\n", timeh);
-	    PDEBUG2("llseek(): timel = 0x%08lx\n", timel);
-	});
-	/* "Current time" special request */
-	if (time == 0ULL)
-	{
-	    ret = libera_get_CTIME(&ctime);
-	    if (ret) return ret;
-	    Qts->L.lmt = ctime.lmt;
-	    lmt2mt(&(Qts->L.lmt), &(Qts->U.mt));
-	}
-	else
-	{
-	    memcpy(&(Qts->U.mt), (libera_hw_time_t *)&time, 
-		   sizeof(libera_hw_time_t));
-	    mt2lmt(&(Qts->U.mt), &(Qts->L.lmt));
-	}
+        /* Interval starting time given in Machine Time (MT) */
+        Qts->request = LIBERA_DD_TIME_EXPLICIT_MT;
+        DEBUG3_ONLY(
+        {
+            unsigned long timeh;
+            unsigned long timel;
+            timeh = time >> 32;
+            timel = time & (unsigned long long) 0x00000000FFFFFFFFULL;
+            PDEBUG2("llseek(): timeh = 0x%08lx\n", timeh);
+            PDEBUG2("llseek(): timel = 0x%08lx\n", timel);
+        });
+        /* "Current time" special request */
+        if (time == 0ULL)
+        {
+            ret = libera_get_CTIME(&ctime);
+            if (ret) return ret;
+            Qts->L.lmt = ctime.lmt;
+            lmt2mt(&(Qts->L.lmt), &(Qts->U.mt));
+        }
+        else
+        {
+            memcpy(&(Qts->U.mt), (libera_hw_time_t *)&time, 
+                   sizeof(libera_hw_time_t));
+            mt2lmt(&(Qts->U.mt), &(Qts->L.lmt));
+        }
 
         break;
 
     case 2: /* SEEK_END */
-	/* Interval starting time defined by external trigger */
-	Qts->request = LIBERA_DD_TIME_IMPLICIT;
-	Qts->trigoffset = time;
-	break;
+        /* Interval starting time defined by external trigger */
+        Qts->request = LIBERA_DD_TIME_IMPLICIT;
+        Qts->trigoffset = time;
+        break;
 
     default: /* can't happen */
         return -EINVAL;
@@ -1078,51 +1078,51 @@ static inline ssize_t libera_OB_fifo_sync(unsigned long *obFIFOstatus)
     libera_dma_t *dma = &lgbl.dma;
     
     while ( dma_no_data(obFIFOstatus) ) {
-	/* FIFO size not large enough, but still expecting more
-	 * data to appear through OB-fifo -> reading too fast.
-	 */
-	PDEBUG3("DD read(): Reading TOO FAST: sleeping...\n");
-	libera_delay_jiffies(DD_WAIT_STEP);
-	*obFIFOstatus = readl(iobase + DD_OB_STATUS);
-	/* NOTE: The OVERRUN bit cannot be set if the driver is chasing
-	 *       the FPGA CB-PUT pointer (reading too fast), because 
-	 *       of the SDRAM-OB_FIFO synchronization in FPGA.
-	 *       Checking the overrun bit here is therefore not 
-	 *       necessary. 
-	 *       Even without this SDRAM-OB_FIFO sync in FPGA it would 
-	 *       be highly unlikely for OVERRUN to occur in such
-	 *       a situation; that is, driver reading from the OB_FIFO 
-	 *       faster than the FPGA is (capable of) writing to.
-	 *
-	 *       On the other hand... if the driver is (reading) too fast,
-	 *       it does not hurt to burn some CPU cycles for OVERRUN check.
-	 *       Let's do it anyway, just to be on the safe side.
-	 */
-	if (DD_OB_OVERRUN(*obFIFOstatus)) {
+        /* FIFO size not large enough, but still expecting more
+         * data to appear through OB-fifo -> reading too fast.
+         */
+        PDEBUG3("DD read(): Reading TOO FAST: sleeping...\n");
+        libera_delay_jiffies(DD_WAIT_STEP);
+        *obFIFOstatus = readl(iobase + DD_OB_STATUS);
+        /* NOTE: The OVERRUN bit cannot be set if the driver is chasing
+         *       the FPGA CB-PUT pointer (reading too fast), because 
+         *       of the SDRAM-OB_FIFO synchronization in FPGA.
+         *       Checking the overrun bit here is therefore not 
+         *       necessary. 
+         *       Even without this SDRAM-OB_FIFO sync in FPGA it would 
+         *       be highly unlikely for OVERRUN to occur in such
+         *       a situation; that is, driver reading from the OB_FIFO 
+         *       faster than the FPGA is (capable of) writing to.
+         *
+         *       On the other hand... if the driver is (reading) too fast,
+         *       it does not hurt to burn some CPU cycles for OVERRUN check.
+         *       Let's do it anyway, just to be on the safe side.
+         */
+        if (DD_OB_OVERRUN(*obFIFOstatus)) {
             spin_lock(&dma_spin_lock);
-	    dma->Overrun = TRUE;
+            dma->Overrun = TRUE;
             spin_unlock(&dma_spin_lock);
-	    PDEBUG("Overrun: OB_status = 0x%08lx in fifo sync.\n", dma->obFIFOstatus);
-	    /* NOTE: The OVERRUN bit is set when the CB-PUT and
-	     *       CB-GET pointers point to the same PAGE.
-	     *       This can only happen when the CB-PUT pointer
-	     *       caches the CB-GET pointer; a real overrun
-	     *       situation.
-	     *       CB-GET pointer can never catch the CB-PUT
-	     *       pointer because of the SDRAM-OB_FIFO 
-	     *       synchronization in FPGA.
-	     */
-	}
-	if ( wait_count++ > HZ) {
+            PDEBUG("Overrun: OB_status = 0x%08lx in fifo sync.\n", dma->obFIFOstatus);
+            /* NOTE: The OVERRUN bit is set when the CB-PUT and
+             *       CB-GET pointers point to the same PAGE.
+             *       This can only happen when the CB-PUT pointer
+             *       caches the CB-GET pointer; a real overrun
+             *       situation.
+             *       CB-GET pointer can never catch the CB-PUT
+             *       pointer because of the SDRAM-OB_FIFO 
+             *       synchronization in FPGA.
+             */
+        }
+        if ( wait_count++ > HZ) {
             spin_lock(&dma_spin_lock);
-	    PDEBUG("DD: Timeout waiting for OB-fifo data.\n");
-	    PDEBUG("dma->remaining = %ld , OB_status = %lu\n",
-		    dma->remaining, *obFIFOstatus);
-	    PDEBUG("Error in file: %s, line: %d)\n", 
-		   __FILE__, __LINE__);
+            PDEBUG("DD: Timeout waiting for OB-fifo data.\n");
+            PDEBUG("dma->remaining = %ld , OB_status = %lu\n",
+                    dma->remaining, *obFIFOstatus);
+            PDEBUG("Error in file: %s, line: %d)\n", 
+                   __FILE__, __LINE__);
             spin_unlock(&dma_spin_lock);
-	    return -EIO;
-	}
+            return -EIO;
+        }
     }
 
     return ret;
@@ -1132,8 +1132,8 @@ static inline ssize_t libera_OB_fifo_sync(unsigned long *obFIFOstatus)
 /** Check if data retrieval is possible and wait in LMT units if necessary */
 static int
 wait_lmt(libera_Ltimestamp_t *ctime,
-	 libera_hw_time_t *start_lmt,
-	 unsigned long span_atoms)
+         libera_hw_time_t *start_lmt,
+         unsigned long span_atoms)
 {
     libera_S64_t delta_LMT_start; /* LMT after start of req. interval */
     libera_S64_t delta_LMT_end;   /* LMT after end   of req. interval */
@@ -1146,10 +1146,10 @@ wait_lmt(libera_Ltimestamp_t *ctime,
 
     /* Safety margin */
     if ( delta_LMT_start > 
-	 (LIBERA_DD_CIRCBUF_ATOMS * lgbl.d) - LIBERA_DD_CIRCBUF_SAFE )
+         (LIBERA_DD_CIRCBUF_ATOMS * lgbl.d) - LIBERA_DD_CIRCBUF_SAFE )
     { /* Too late! */
         PDEBUG("Request TOO LATE: delta_LMT_start = 0x%08lx%08lx\n",
-	       ULL(delta_LMT_start));
+               ULL(delta_LMT_start));
         return -ENODATA; /* No data available */
     }
     /* Have we passed the end of interval already? */
@@ -1157,43 +1157,43 @@ wait_lmt(libera_Ltimestamp_t *ctime,
 
     if (delta_LMT_end < 0)
     {
-	/* Data request is early -> Wait a bit... but not too long! */
-	if (-delta_LMT_end > (LIBERA_DD_MAX_INADVANCE * lgbl.d)) 
-	{
-	    /* Too early! */
-	    return -EAGAIN; /* Try again later. */
-	} 
-	else
-	{
-	    DEBUG2_ONLY(wait_count = 0);
-	    do
-	    {
-		DEBUG2_ONLY(
-		if (++wait_count > DD_WAIT_TIMEOUT)
-		{
-		    PDEBUG2("DD (timing): Timeout waiting for LMT after %d wait cycles\n", 
-			       wait_count-1);
-		    return -EDEADLK;
-		});
-		
-		LMT_delay = -delta_LMT_end;
-		timeout_jiff = div_u64((LMT_delay * FLMC_DECI_HZ * HZ), flmcdHz) + 1;
+        /* Data request is early -> Wait a bit... but not too long! */
+        if (-delta_LMT_end > (LIBERA_DD_MAX_INADVANCE * lgbl.d)) 
+        {
+            /* Too early! */
+            return -EAGAIN; /* Try again later. */
+        } 
+        else
+        {
+            DEBUG2_ONLY(wait_count = 0);
+            do
+            {
+                DEBUG2_ONLY(
+                if (++wait_count > DD_WAIT_TIMEOUT)
+                {
+                    PDEBUG2("DD (timing): Timeout waiting for LMT after %d wait cycles\n", 
+                               wait_count-1);
+                    return -EDEADLK;
+                });
+                
+                LMT_delay = -delta_LMT_end;
+                timeout_jiff = div_u64((LMT_delay * FLMC_DECI_HZ * HZ), flmcdHz) + 1;
 
-		PDEBUG2("Sleeping %ld jiff (LMT_delay = 0x%08lx%08lx)...\n", 
-		       timeout_jiff, ULL(LMT_delay));
-		ret = libera_delay_jiffies_interruptible(timeout_jiff);
-		if (ret) return ret;
-		/* We are back. */
-		/* Check the time again TODO: This might not be necessary. */
-		ret = libera_get_CTIME(ctime);
-		if (ret) {
-		    PDEBUG2("wait_lmt(): Error reading CTIME.\n");
-		    return ret;
-		}
-		delta_LMT_end = ctime->lmt - *start_lmt - 
-		    (LIBERA_DD_READSYNC_MARGIN * lgbl.d);
-	    } while ( delta_LMT_end < 0);
-	}
+                PDEBUG2("Sleeping %ld jiff (LMT_delay = 0x%08lx%08lx)...\n", 
+                       timeout_jiff, ULL(LMT_delay));
+                ret = libera_delay_jiffies_interruptible(timeout_jiff);
+                if (ret) return ret;
+                /* We are back. */
+                /* Check the time again TODO: This might not be necessary. */
+                ret = libera_get_CTIME(ctime);
+                if (ret) {
+                    PDEBUG2("wait_lmt(): Error reading CTIME.\n");
+                    return ret;
+                }
+                delta_LMT_end = ctime->lmt - *start_lmt - 
+                    (LIBERA_DD_READSYNC_MARGIN * lgbl.d);
+            } while ( delta_LMT_end < 0);
+        }
     }
 
     return ret;
@@ -1203,8 +1203,8 @@ wait_lmt(libera_Ltimestamp_t *ctime,
 /** Check if data retrieval is possible and wait in LMT units if necessary */
 static int
 wait_lst(libera_Ltimestamp_t *ctime,
-	 libera_hw_time_t *start_lst,
-	 unsigned long span_atoms)
+         libera_hw_time_t *start_lst,
+         unsigned long span_atoms)
 {
     libera_S64_t delta_LST_start; /* LST after start of req. interval */
     libera_S64_t delta_LST_end;   /* LST after end   of req. interval */
@@ -1217,10 +1217,10 @@ wait_lst(libera_Ltimestamp_t *ctime,
 
     /* Safety margin */
     if ( delta_LST_start > 
-	 (LIBERA_DD_CIRCBUF_ATOMS * lgbl.d) - LIBERA_DD_CIRCBUF_SAFE )
+         (LIBERA_DD_CIRCBUF_ATOMS * lgbl.d) - LIBERA_DD_CIRCBUF_SAFE )
     { /* Too late! */
         PDEBUG("Request TOO LATE: delta_LST_start = 0x%08lx%08lx\n",
-	       ULL(delta_LST_start));
+               ULL(delta_LST_start));
         return -ENODATA; /* No data available */
     }
     /* Have we passed the end of interval already? */
@@ -1228,43 +1228,43 @@ wait_lst(libera_Ltimestamp_t *ctime,
 
     if (delta_LST_end < 0)
     {
-	/* Data request is early -> Wait a bit... but not too long! */
-	if (-delta_LST_end > (LIBERA_DD_MAX_INADVANCE * lgbl.d)) 
-	{
-	    /* Too early! */
-	    return -EAGAIN; /* Try again later. */
-	} 
-	else
-	{
-	    DEBUG2_ONLY(wait_count = 0);
-	    do
-	    {
-		DEBUG2_ONLY(
-		if (++wait_count > DD_WAIT_TIMEOUT)
-		{
-		    PDEBUG2("DD (timing): Timeout waiting for LST after %d wait cycles\n", 
-			       wait_count-1);
-		    return -EDEADLK;
-		});
-		
-		LST_delay = -delta_LST_end;
-		timeout_jiff = div_u64((LST_delay * HZ), LSC_FREQ) + 1;
+        /* Data request is early -> Wait a bit... but not too long! */
+        if (-delta_LST_end > (LIBERA_DD_MAX_INADVANCE * lgbl.d)) 
+        {
+            /* Too early! */
+            return -EAGAIN; /* Try again later. */
+        } 
+        else
+        {
+            DEBUG2_ONLY(wait_count = 0);
+            do
+            {
+                DEBUG2_ONLY(
+                if (++wait_count > DD_WAIT_TIMEOUT)
+                {
+                    PDEBUG2("DD (timing): Timeout waiting for LST after %d wait cycles\n", 
+                               wait_count-1);
+                    return -EDEADLK;
+                });
+                
+                LST_delay = -delta_LST_end;
+                timeout_jiff = div_u64((LST_delay * HZ), LSC_FREQ) + 1;
 
-		PDEBUG2("Sleeping %ld jiff (LST_delay = 0x%08lx%08lx)...\n", 
-		       timeout_jiff, ULL(LST_delay));
-		ret = libera_delay_jiffies_interruptible(timeout_jiff);
-		if (ret) return ret;
-		/* We are back. */
-		/* Check the time again TODO: This might not be necessary. */
-		ret = libera_get_CTIME(ctime);
-		if (ret){
-		    PDEBUG2("wait_lst(): Error reading CTIME.\n");
-		    return ret;
-		}
-		delta_LST_end = ctime->lst - *start_lst - 
-		    (LIBERA_DD_READSYNC_MARGIN * lgbl.d);
-	    } while ( delta_LST_end < 0);
-	}
+                PDEBUG2("Sleeping %ld jiff (LST_delay = 0x%08lx%08lx)...\n", 
+                       timeout_jiff, ULL(LST_delay));
+                ret = libera_delay_jiffies_interruptible(timeout_jiff);
+                if (ret) return ret;
+                /* We are back. */
+                /* Check the time again TODO: This might not be necessary. */
+                ret = libera_get_CTIME(ctime);
+                if (ret){
+                    PDEBUG2("wait_lst(): Error reading CTIME.\n");
+                    return ret;
+                }
+                delta_LST_end = ctime->lst - *start_lst - 
+                    (LIBERA_DD_READSYNC_MARGIN * lgbl.d);
+            } while ( delta_LST_end < 0);
+        }
     }
 
     return ret;
@@ -1294,8 +1294,8 @@ inline int dma_needs_start(void) {
  */
 static inline ssize_t
 libera_dd_transfer_OBfifo_DMA(char *userbuf, 
-			      size_t atom_count,
-			      char *buf)
+                              size_t atom_count,
+                              char *buf)
 {
     struct libera_dd_device  *dd  = &libera_dd;
     libera_dma_t *dma = &lgbl.dma;
@@ -1316,7 +1316,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     /* Get status */
     dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
     PDEBUG3("Starting DMA OB transfer: OB_status = 0x%08lx, OB_size = 0x%lx\n",
-	    dma->obFIFOstatus, DD_OB_SIZE(dma->obFIFOstatus));
+            dma->obFIFOstatus, DD_OB_SIZE(dma->obFIFOstatus));
 
     /* Initialize DMA structures */
     dma->Overrun = FALSE;
@@ -1327,7 +1327,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     PDEBUG3("Flushing DMA fifo...\n");
     flushDMA_FIFO(dma);
     libera_dma_get_DMAC_csize(dma);
-		    
+                    
     spin_unlock(&dma_spin_lock);
 
     /* NOTE: OB-fifo size should be > 0 here, otherwise we would not get 
@@ -1379,41 +1379,41 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
 #else // INTERRRUPTIBLE
         /* Check fifo size & wait/sleep if neccessary */
         if (emptyDMA_FIFO(dma))
-	{
-	    init_waitqueue_entry(&wait,current);
-	    add_wait_queue(&dd->DMA_queue,&wait);
-	    for (;;)
-	    {
-	        set_current_state(TASK_INTERRUPTIBLE);
-		if (not_emptyDMA_FIFO(dma)) {
-		    break;
-		}
-		if (!signal_pending(current) && !dd->pm_entry) {
-		    schedule();
-		    continue;
-		}
+        {
+            init_waitqueue_entry(&wait,current);
+            add_wait_queue(&dd->DMA_queue,&wait);
+            for (;;)
+            {
+                set_current_state(TASK_INTERRUPTIBLE);
+                if (not_emptyDMA_FIFO(dma)) {
+                    break;
+                }
+                if (!signal_pending(current) && !dd->pm_entry) {
+                    schedule();
+                    continue;
+                }
                 // mark aborting condition
                 dma->aborting = TRUE;
-		// NOTE: This will only work for small read() requests.
-		DEBUG2_ONLY(
-		    if ( sleep_count++ > 10000) {
-			PDEBUG2("BREAKING DMA sleeping loop.\n");
-			PDEBUG2("Error in file: %s, line: %d)\n", 
-				__FILE__, __LINE__);
-			ret = -EDEADLK;
-			break;
-		    });
-		if (dd->pm_entry)
-		    PDEBUG("aborting due to pm entry.\n");
-		else
-		    PDEBUG("aborting due to pending signal!\n");
-		ret = -ERESTARTSYS;
-		break;
-	    }
-	    set_current_state(TASK_RUNNING);	
-	    remove_wait_queue(&dd->DMA_queue, &wait);
-	}
-	
+                // NOTE: This will only work for small read() requests.
+                DEBUG2_ONLY(
+                    if ( sleep_count++ > 10000) {
+                        PDEBUG2("BREAKING DMA sleeping loop.\n");
+                        PDEBUG2("Error in file: %s, line: %d)\n", 
+                                __FILE__, __LINE__);
+                        ret = -EDEADLK;
+                        break;
+                    });
+                if (dd->pm_entry)
+                    PDEBUG("aborting due to pm entry.\n");
+                else
+                    PDEBUG("aborting due to pending signal!\n");
+                ret = -ERESTARTSYS;
+                break;
+            }
+            set_current_state(TASK_RUNNING);    
+            remove_wait_queue(&dd->DMA_queue, &wait);
+        }
+        
         if (ret) return ret;
 #endif
 
@@ -1421,54 +1421,54 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
         fifo_atoms = lenDMA_FIFO(dma);
         PDEBUG3("DMA-OB: fifo_atoms = %lu\n", fifo_atoms);
         if (fifo_atoms)
-	{
-	    /* Userland transfer */
-	    if (userbuf) {
-		for (i=0; i < fifo_atoms; i++) {
-		    if ((OBAtoms++ < atom_count) && !(dma->Overrun))
-		    {
-			if (copy_to_user(userbuf, &dma->buf[dma->get],
-					 sizeof(libera_atom_dd_t))) {
-			    return -EFAULT;
-			}
-			else
-			{
-			    dma->written++;
-			    userbuf += sizeof(libera_atom_dd_t);
-			}
-		    }
+        {
+            /* Userland transfer */
+            if (userbuf) {
+                for (i=0; i < fifo_atoms; i++) {
+                    if ((OBAtoms++ < atom_count) && !(dma->Overrun))
+                    {
+                        if (copy_to_user(userbuf, &dma->buf[dma->get],
+                                         sizeof(libera_atom_dd_t))) {
+                            return -EFAULT;
+                        }
+                        else
+                        {
+                            dma->written++;
+                            userbuf += sizeof(libera_atom_dd_t);
+                        }
+                    }
                     spin_lock(&dma_spin_lock);
-		    dma->get = (dma->get + 1) & LIBERA_DMA_FIFO_MASK;
+                    dma->get = (dma->get + 1) & LIBERA_DMA_FIFO_MASK;
                     spin_unlock(&dma_spin_lock);
-		}
-		PDEBUG3("Copied %lu atoms to Userland.\n", i);
-	    }
+                }
+                PDEBUG3("Copied %lu atoms to Userland.\n", i);
+            }
 
-	    /* Kernel buffer transfer */
-	    if (buf) {
-		for (i=0; i < fifo_atoms; i++) {
-		    if ((OBAtoms++ < atom_count) && !(dma->Overrun))
-		    {
-			memcpy(buf, &dma->buf[dma->get],
-			       sizeof(libera_atom_dd_t));
-			dma->written++;
-			buf += sizeof(libera_atom_dd_t);
-		    }
+            /* Kernel buffer transfer */
+            if (buf) {
+                for (i=0; i < fifo_atoms; i++) {
+                    if ((OBAtoms++ < atom_count) && !(dma->Overrun))
+                    {
+                        memcpy(buf, &dma->buf[dma->get],
+                               sizeof(libera_atom_dd_t));
+                        dma->written++;
+                        buf += sizeof(libera_atom_dd_t);
+                    }
                     spin_lock(&dma_spin_lock);
-		    dma->get = (dma->get + 1) & LIBERA_DMA_FIFO_MASK;
+                    dma->get = (dma->get + 1) & LIBERA_DMA_FIFO_MASK;
                     spin_unlock(&dma_spin_lock);
-		}
-		PDEBUG3("Copied %lu atoms to kernel buffer.\n", i);
-	    }
-	}
-	else
-	{
-	    /* DMA FIFO empty ?!
-	     * This should never happen when we're awake.
-	     */
-	    printk(KERN_CRIT "DD read(): BUG: Awake when DMA FIFO empty ?!\n");
-	    return -EFAULT;
-	}
+                }
+                PDEBUG3("Copied %lu atoms to kernel buffer.\n", i);
+            }
+        }
+        else
+        {
+            /* DMA FIFO empty ?!
+             * This should never happen when we're awake.
+             */
+            printk(KERN_CRIT "DD read(): BUG: Awake when DMA FIFO empty ?!\n");
+            return -EFAULT;
+        }
 
         /* Give other threads a chance */
         if ( jiffies > (last_yield + LIBERA_YIELD_INTERVAL) ) {
@@ -1486,99 +1486,99 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
             }
         }
             
-	/* Start DMA again if needed */
-	/* (!dma->DMAC_transfer) && (dma->remaining)*/
+        /* Start DMA again if needed */
+        /* (!dma->DMAC_transfer) && (dma->remaining)*/
         if ( dma_needs_start() ) {
             spin_lock(&dma_spin_lock);
-	    /* Refresh status */
-	    dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
-		
-	    /* Check Overrun */
-	    if (DD_OB_OVERRUN(dma->obFIFOstatus)) {
-		dma->Overrun = TRUE;
-		PDEBUG("Overrun: OB_status = 0x%08lx in transfer.\n", dma->obFIFOstatus);
-		/* NOTE: The OVERRUN bit is set when the CB-PUT and
-		 *       CB-GET pointers point to the same PAGE.
-		 *       This can only happen when the CB-PUT pointer
-		 *       caches the CB-GET pointer; a real overrun
-		 *       situation.
-		 *       CB-GET pointer can never catch the CB-PUT
-		 *       pointer because of the SDRAM-OB_FIFO 
-		 *       synchronization in FPGA.
-		 */
-	    }
+            /* Refresh status */
+            dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
+                
+            /* Check Overrun */
+            if (DD_OB_OVERRUN(dma->obFIFOstatus)) {
+                dma->Overrun = TRUE;
+                PDEBUG("Overrun: OB_status = 0x%08lx in transfer.\n", dma->obFIFOstatus);
+                /* NOTE: The OVERRUN bit is set when the CB-PUT and
+                 *       CB-GET pointers point to the same PAGE.
+                 *       This can only happen when the CB-PUT pointer
+                 *       caches the CB-GET pointer; a real overrun
+                 *       situation.
+                 *       CB-GET pointer can never catch the CB-PUT
+                 *       pointer because of the SDRAM-OB_FIFO 
+                 *       synchronization in FPGA.
+                 */
+            }
             spin_unlock(&dma_spin_lock);
 
-	    /* Reading speed sync */
-	    sync_ret = libera_OB_fifo_sync(&dma->obFIFOstatus);
-	    if ( sync_ret < 0 ) return sync_ret;
+            /* Reading speed sync */
+            sync_ret = libera_OB_fifo_sync(&dma->obFIFOstatus);
+            if ( sync_ret < 0 ) return sync_ret;
 
-	    spin_lock(&dma_spin_lock);
+            spin_lock(&dma_spin_lock);
 
-	    libera_dma_get_DMAC_csize(dma);
-	    
-	    /* NOTE: At this stage, it is still possible that dma->csize == 0.
-	     *       If it equals zero, it can only mean that our DMA fifo
-	     *       is full. In this case we just pass control to the 
-	     *       main DMA while loop to empty the DMA fifo first.
-	     */	    
-	    if (!(dma->csize > 0)) {
-		if  ( (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)) == 0) {
+            libera_dma_get_DMAC_csize(dma);
+            
+            /* NOTE: At this stage, it is still possible that dma->csize == 0.
+             *       If it equals zero, it can only mean that our DMA fifo
+             *       is full. In this case we just pass control to the 
+             *       main DMA while loop to empty the DMA fifo first.
+             */     
+            if (!(dma->csize > 0)) {
+                if  ( (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)) == 0) {
                     spin_unlock(&dma_spin_lock);
-		    continue;
+                    continue;
                 }
-	    }
+            }
 
-	    /* NOTE: At this stage, dma->csize should not in any case be 
-	     *       dma->csize == 0. If it equals zero, we will get
-	     *       DMA BUS ERROR -> print debug info.
-	     */
-	    DEBUG_ONLY(
-	        if (!(dma->csize > 0)) {
-		    PDEBUG("dma->csize = %ld\n", 
-			   dma->csize);
-		    PDEBUG("dma->remaining = %ld\n", 
-			   dma->remaining);
-		    PDEBUG("dma->obFIFOstatus = 0x%lx\n", 
-			   dma->obFIFOstatus);
-		    PDEBUG("OB_size = %lu\n",
-			   DD_OB_SIZE(dma->obFIFOstatus));
-		    PDEBUG("OB_busy = %lu\n",
-			   DD_OB_BUSY(dma->obFIFOstatus));
-		    PDEBUG("tailDMA_FIFO(dma) = %d\n", 
-			   tailDMA_FIFO(dma));
-		    PDEBUG("DMA fifo free = %d\n",
-			   (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)));
-		    PDEBUG("DMA put = %lu\n", dma->put);
-		    PDEBUG("DMA get = %lu\n", dma->get);
-		    PDEBUG("OBAtoms = %lu\n", OBAtoms);
-		    PDEBUG("dma->written = %lu\n", 
-			   (unsigned long)dma->written);
-		});
-	    
-	    // TODO: LIBERA_IOBASE is not configurable !!!
-	    if (!dma->Overrun) {
-	        libera_dma_command((LIBERA_IOBASE + DD_OB_FIFOBASE),
-				   &dma->buf[dma->put],
-				   dma->csize*sizeof(libera_atom_dd_t));
-	    } else {
-	      /* Stop the DMA transfer in case of overrrun */
+            /* NOTE: At this stage, dma->csize should not in any case be 
+             *       dma->csize == 0. If it equals zero, we will get
+             *       DMA BUS ERROR -> print debug info.
+             */
+            DEBUG_ONLY(
+                if (!(dma->csize > 0)) {
+                    PDEBUG("dma->csize = %ld\n", 
+                           dma->csize);
+                    PDEBUG("dma->remaining = %ld\n", 
+                           dma->remaining);
+                    PDEBUG("dma->obFIFOstatus = 0x%lx\n", 
+                           dma->obFIFOstatus);
+                    PDEBUG("OB_size = %lu\n",
+                           DD_OB_SIZE(dma->obFIFOstatus));
+                    PDEBUG("OB_busy = %lu\n",
+                           DD_OB_BUSY(dma->obFIFOstatus));
+                    PDEBUG("tailDMA_FIFO(dma) = %d\n", 
+                           tailDMA_FIFO(dma));
+                    PDEBUG("DMA fifo free = %d\n",
+                           (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)));
+                    PDEBUG("DMA put = %lu\n", dma->put);
+                    PDEBUG("DMA get = %lu\n", dma->get);
+                    PDEBUG("OBAtoms = %lu\n", OBAtoms);
+                    PDEBUG("dma->written = %lu\n", 
+                           (unsigned long)dma->written);
+                });
+            
+            // TODO: LIBERA_IOBASE is not configurable !!!
+            if (!dma->Overrun) {
+                libera_dma_command((LIBERA_IOBASE + DD_OB_FIFOBASE),
+                                   &dma->buf[dma->put],
+                                   dma->csize*sizeof(libera_atom_dd_t));
+            } else {
+              /* Stop the DMA transfer in case of overrrun */
                 spin_unlock(&dma_spin_lock);
                 break;
-	    }
+            }
             spin_unlock(&dma_spin_lock);
-	}
+        }
 
-	// NOTE: This will only work for small read() requests.
-	DEBUG2_ONLY({
-	    if ( dma_while_count++ > 10000000) {
-		PDEBUG2("BREAKING DMA while loop (dma->remaining = %ld, lenDMA_FIFO(dma) = %d).\n", dma->remaining, lenDMA_FIFO(dma));
-		PDEBUG2("Error in file: %s, line: %d)\n", 
-			__FILE__, __LINE__);
-		return -EDEADLK;
-	    }
-	});
-	
+        // NOTE: This will only work for small read() requests.
+        DEBUG2_ONLY({
+            if ( dma_while_count++ > 10000000) {
+                PDEBUG2("BREAKING DMA while loop (dma->remaining = %ld, lenDMA_FIFO(dma) = %d).\n", dma->remaining, lenDMA_FIFO(dma));
+                PDEBUG2("Error in file: %s, line: %d)\n", 
+                        __FILE__, __LINE__);
+                return -EDEADLK;
+            }
+        });
+        
     } while ( (dma->remaining) ||
               (not_emptyDMA_FIFO(dma)) );
     
@@ -1589,20 +1589,20 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     spin_lock(&dma_spin_lock);
     dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
     PDEBUG2("End of DMA transfer: OB_status = 0x%lx, OB_size = 0x%lx\n",
-	    dma->obFIFOstatus,
-	    DD_OB_SIZE(dma->obFIFOstatus));    
+            dma->obFIFOstatus,
+            DD_OB_SIZE(dma->obFIFOstatus));    
     /* Only check for resudual OB_size if there was no OB overrun. */
     if (!dma->Overrun && DD_OB_SIZE(dma->obFIFOstatus)) {
         /* This should never happen. */
-	PDEBUG("DD read(): BUG: OB_size=0x%lx after DMA transfer.\n",
-	       DD_OB_SIZE(dma->obFIFOstatus));
-	PDEBUG("Error in file: %s, line: %d)\n", 
-	       __FILE__, __LINE__);
-	/* NOTE: Emptying OB-fifo for future DD requests is not
+        PDEBUG("DD read(): BUG: OB_size=0x%lx after DMA transfer.\n",
+               DD_OB_SIZE(dma->obFIFOstatus));
+        PDEBUG("Error in file: %s, line: %d)\n", 
+               __FILE__, __LINE__);
+        /* NOTE: Emptying OB-fifo for future DD requests is not
          *       necessary since OB_SIZE is reset upon every CB_FIFO request.
-	 */
+         */
         spin_unlock(&dma_spin_lock);
-	return -EIO;
+        return -EIO;
     }
 
 
@@ -1610,9 +1610,9 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     if ( !dma->Overrun && (OBAtoms != atom_count) )
     {
         PDEBUG("DD read(): FPGA size inconsistency: %d : %lu\n",
-	       atom_count, OBAtoms);
+               atom_count, OBAtoms);
         spin_unlock(&dma_spin_lock);
-	return -EFAULT;
+        return -EFAULT;
     }
 
     DEBUG_ONLY(if (dma->Overrun) PDEBUG("Circular buffer OVERRUN!\n"));    
@@ -1629,8 +1629,8 @@ static inline ssize_t
 libera_dd_read_OBfifo_DMA(char *buf, size_t atom_count)
 {
     return libera_dd_transfer_OBfifo_DMA(NULL, 
-					 atom_count,
-					 buf);
+                                         atom_count,
+                                         buf);
 }
 
 
@@ -1649,10 +1649,10 @@ libera_dd_read_OBfifo_DMA(char *buf, size_t atom_count)
  */
 ssize_t 
 libera_dd_read_specific(struct file *file, char *buf,
-			size_t count, loff_t *f_pos)
+                        size_t count, loff_t *f_pos)
 {
     struct libera_dd_device *dev =
-    	(struct libera_dd_device *) file->private_data;
+        (struct libera_dd_device *) file->private_data;
     libera_dd_local_t *dd_local = (libera_dd_local_t *)file->f_version;
     libera_Qtimestamp_t *Qts = &dd_local->Qts;
 
@@ -1671,27 +1671,27 @@ libera_dd_read_specific(struct file *file, char *buf,
 
     /* Lock the whole device */
     if (mutex_lock_interruptible(&dev->sem))
-	return -ERESTARTSYS;
+        return -ERESTARTSYS;
 
     PDEBUG3("DD read(): Got DD lock.\n");
     /* Sanity check regarding count */
     if (count > (LIBERA_DD_MAX_INTERVAL*sizeof(libera_atom_dd_t))) {
-	PDEBUG("DD: read(): Parameter count too big.\n");
-	ret = -EINVAL;
-	goto out;
+        PDEBUG("DD: read(): Parameter count too big.\n");
+        ret = -EINVAL;
+        goto out;
     }
 
     /* Filter out strange, non-atomically-dividable values. */
     if (count % sizeof(libera_atom_dd_t)) {
-	PDEBUG("DD: read(): Inapropriate count size.\n");
-    	ret = -EINVAL;
-	goto out;
+        PDEBUG("DD: read(): Inapropriate count size.\n");
+        ret = -EINVAL;
+        goto out;
     }
     span_atoms = count/sizeof(libera_atom_dd_t);
 
     /* Zero-atom-length request returns no data */
     if (!span_atoms)
-	goto out_zero;
+        goto out_zero;
 
     /* 
      * Check for early/late absolute requests. 
@@ -1705,68 +1705,68 @@ libera_dd_read_specific(struct file *file, char *buf,
     if (Qts->request == LIBERA_DD_TIME_EXPLICIT_ST)
     {
         PDEBUG3("DD: read(): LIBERA_DD_TIME_EXPLICIT_ST\n");
-	/* Check/Wait in LST units */
-	ret = wait_lst(&ctime, &(Qts->L.lst), span_atoms);
-	if (ret) {
-	    PDEBUG2("DD read(): Error in wait_lst().\n");
-	    goto out;
-	}
+        /* Check/Wait in LST units */
+        ret = wait_lst(&ctime, &(Qts->L.lst), span_atoms);
+        if (ret) {
+            PDEBUG2("DD read(): Error in wait_lst().\n");
+            goto out;
+        }
         /* Define the missing parts of Qts (LMT & MT) */
-	ret = lst2lmt(&(Qts->L.lst), &(Qts->L.lmt), &ctime);
-	if (ret) {
-	    PDEBUG2("DD read(): Error in lst2lmt().\n");
-	    goto out;
-	}
-	lmt2mt(&(Qts->L.lmt), &(Qts->U.mt));
+        ret = lst2lmt(&(Qts->L.lst), &(Qts->L.lmt), &ctime);
+        if (ret) {
+            PDEBUG2("DD read(): Error in lst2lmt().\n");
+            goto out;
+        }
+        lmt2mt(&(Qts->L.lmt), &(Qts->U.mt));
     }
     /* Request given in absolute MT */
     if (Qts->request == LIBERA_DD_TIME_EXPLICIT_MT)
     {
         PDEBUG3("DD: read(): LIBERA_DD_TIME_EXPLICIT_MT\n");
-	/* Check/Wait in LMT units */
-	ret = wait_lmt(&ctime, &(Qts->L.lmt), span_atoms);
-	if (ret) {
-	    PDEBUG2("DD read(): Error in wait_lmt().\n");
-	    goto out;
-	}
+        /* Check/Wait in LMT units */
+        ret = wait_lmt(&ctime, &(Qts->L.lmt), span_atoms);
+        if (ret) {
+            PDEBUG2("DD read(): Error in wait_lmt().\n");
+            goto out;
+        }
         /* Define the missing parts of Qts (LST & ST) */
-	ret = lmt2lst(&(Qts->L.lmt), &(Qts->L.lst), &ctime);
-	if (ret) {
-	    PDEBUG2("DD read(): Error in lmt2lst().\n");
-	    goto out;
-	}
-	lst2st(&(Qts->L.lst), &(Qts->U.st));
+        ret = lmt2lst(&(Qts->L.lmt), &(Qts->L.lst), &ctime);
+        if (ret) {
+            PDEBUG2("DD read(): Error in lmt2lst().\n");
+            goto out;
+        }
+        lst2st(&(Qts->L.lst), &(Qts->U.st));
     }
     /* Trigger defined time (implicitly defined time) */
     if (Qts->request == LIBERA_DD_TIME_IMPLICIT)
     {
-	struct libera_event_device  *event  = &libera_event;
-	PDEBUG3("DD: read(): LIBERA_DD_TIME_IMPLICIT\n");
-	/* Get the last trigger */
-	last_trigger = 
-	    getFromCircBuf(&event->paired_timestamps[T_TRIG_TRIGGER]);
+        struct libera_event_device  *event  = &libera_event;
+        PDEBUG3("DD: read(): LIBERA_DD_TIME_IMPLICIT\n");
+        /* Get the last trigger */
+        last_trigger = 
+            getFromCircBuf(&event->paired_timestamps[T_TRIG_TRIGGER]);
 
-	PDEBUG2("Got last trigger, lmt: 0x%08lx%08lx, lst: 0x%08lx%08lx\n",
-		       	ULL(last_trigger->lmt), ULL(last_trigger->lst));
+        PDEBUG2("Got last trigger, lmt: 0x%08lx%08lx, lst: 0x%08lx%08lx\n",
+                        ULL(last_trigger->lmt), ULL(last_trigger->lst));
         /* Last Trigger with _MT_ offset */
         Qts->L.lmt = last_trigger->lmt + (Qts->trigoffset * lgbl.d);
         Qts->L.lst = last_trigger->lst;
         /* Define the missing parts of Qts (LST & ST) */
-	ret = lmt2lst(&(Qts->L.lmt), &(Qts->L.lst), last_trigger);
-	if (ret) {
-	    PDEBUG("DD read(): Error in lmt2lst().\n");
-	    goto out;
-	}
-	lmt2mt(&(Qts->L.lmt), &(Qts->U.mt));
-	lst2st(&(Qts->L.lst), &(Qts->U.st));
-	/* Check/Wait in LMT units */
-	ret = wait_lmt(&ctime, &(Qts->L.lmt), span_atoms);
-	if (ret) {
-	    PDEBUG("DD read(): Error in wait_lmt().\n");
-	    goto out;
-	}
-	PDEBUG2("store timestamp,  lmt: %lld, lst: %ld.%09ld\n",
-		       	Qts->U.mt, Qts->U.st.tv_sec, Qts->U.st.tv_nsec);
+        ret = lmt2lst(&(Qts->L.lmt), &(Qts->L.lst), last_trigger);
+        if (ret) {
+            PDEBUG("DD read(): Error in lmt2lst().\n");
+            goto out;
+        }
+        lmt2mt(&(Qts->L.lmt), &(Qts->U.mt));
+        lst2st(&(Qts->L.lst), &(Qts->U.st));
+        /* Check/Wait in LMT units */
+        ret = wait_lmt(&ctime, &(Qts->L.lmt), span_atoms);
+        if (ret) {
+            PDEBUG("DD read(): Error in wait_lmt().\n");
+            goto out;
+        }
+        PDEBUG2("store timestamp,  lmt: %lld, lst: %ld.%09ld\n",
+                        Qts->U.mt, Qts->U.st.tv_sec, Qts->U.st.tv_nsec);
     }
     
     /* Store timestamp for later ioctl() retrieval */
@@ -1774,19 +1774,19 @@ libera_dd_read_specific(struct file *file, char *buf,
 
     /* Write command to CB fifo (initiate data transfer) */
     CB_ret = libera_dd_write_CBfifo(get_circ_offset_lmt(&Qts->L.lmt),
-				    span_atoms,
-				    dd_local->dec);
+                                    span_atoms,
+                                    dd_local->dec);
     if (CB_ret < 0)
     { 
-	ret = CB_ret;
-	goto out;
+        ret = CB_ret;
+        goto out;
     }
 
     /* Wait for DD interrupt */
     PDEBUG3("DD read(): Waiting for DD interrupt...\n");
     IRQ_ret = getBlockedFromFIFO(&dev->dd_irqevents,
-				 &dev->DD_queue,
-				 &dd_dummy);
+                                 &dev->DD_queue,
+                                 &dd_dummy);
     if (IRQ_ret) goto out;
     PDEBUG3("DD read(): Awoken by DD interrupt handler.\n");
 
@@ -1797,15 +1797,15 @@ libera_dd_read_specific(struct file *file, char *buf,
         // reset SDRAM controller
         PDEBUG("SDRAM controller reset.\n");
         writel(0, iobase + DD_CB_FIFO_RESET);
-	ret = dma->written * sizeof(libera_atom_dd_t);
-	goto out;
+        ret = dma->written * sizeof(libera_atom_dd_t);
+        goto out;
     }
     else
-	ret += OB_ret * sizeof(libera_atom_dd_t);
+        ret += OB_ret * sizeof(libera_atom_dd_t);
 
 
     PDEBUG3("DD (%p): Read %lu atoms from MT = %llu\n", 
-	   file, (unsigned long)OB_ret, Qts->U.mt);
+           file, (unsigned long)OB_ret, Qts->U.mt);
 
  out_zero:
     /* MT & LMT increment for future read() requests */
@@ -1862,23 +1862,23 @@ libera_acq_pm(void)
 
         PDEBUG("Try to obtain DD lock.\n");
         if (mutex_trylock(&dd->sem)) {
-	    /* We've locked the DD device! */
-	    locked = TRUE;
+            /* We've locked the DD device! */
+            locked = TRUE;
             PDEBUG("Got DD lock @wait: %d.\n", wait);
-	    break;
-	}
-	libera_delay_jiffies_interruptible(DD_WAIT_STEP);
+            break;
+        }
+        libera_delay_jiffies_interruptible(DD_WAIT_STEP);
     } while (wait-- > 0);
 
     dd->pm_entry = 0;
 
     if (!locked) {
-	PDEBUG("DD device busy. Cannot acquire PM data.\n");
-	return -EBUSY;
+        PDEBUG("DD device busy. Cannot acquire PM data.\n");
+        return -EBUSY;
     }
 
     pPMevent =
-	getFromCircBuf(&event->paired_timestamps[T_TRIG_POST_MORTEM]);
+        getFromCircBuf(&event->paired_timestamps[T_TRIG_POST_MORTEM]);
     memcpy(&pm->PMevent, pPMevent, sizeof(libera_Ltimestamp_t));
 
     /* MT & ST timestamp for later ioctl() retrieval */
@@ -1898,24 +1898,24 @@ libera_acq_pm(void)
     if (ret) goto out;
     ret = wait_lmt(&ctime, &LMTstart, pmsize);
     if (ret) {
-	PDEBUG2("PM: Error in wait_lmt(), ret = %d.\n", ret);
-	goto out;
+        PDEBUG2("PM: Error in wait_lmt(), ret = %d.\n", ret);
+        goto out;
     }
 
     PDEBUG("PM: Acquiring into PM buffer...\n");
     /* Write command to CB fifo (initiate data transfer) */
     ret = libera_dd_write_CBfifo(get_circ_offset_lmt(&LMTstart), 
-				 pmsize, 1);
+                                 pmsize, 1);
     if (ret < 0) {
-	PDEBUG("PM: Error writing to CB FIFO (%d).\n", ret);
-	goto out;
+        PDEBUG("PM: Error writing to CB FIFO (%d).\n", ret);
+        goto out;
     }
     
     /* Wait for DD interrupt */
     PDEBUG("PM: waiting for DD interrupt...\n");
     ret = getBlockedFromFIFO(&dd->dd_irqevents,
-			     &dd->DD_queue,
-			     &dd_dummy);
+                             &dd->DD_queue,
+                             &dd_dummy);
     if (ret) goto out;
     
     /* And now begin the data transfer */
@@ -1928,13 +1928,13 @@ libera_acq_pm(void)
     
     /* Check for errors */
     if (ret < 0) {
-	PDEBUG("PM: Error reading OB FIFO (%d).\n", ret);
-	goto out;
+        PDEBUG("PM: Error reading OB FIFO (%d).\n", ret);
+        goto out;
     }
     if (ret < pmsize) {
-	PDEBUG("PM: Incomplete PM data (%d atoms).\n", ret);
-	ret = -EIO;
-	goto out;
+        PDEBUG("PM: Incomplete PM data (%d atoms).\n", ret);
+        ret = -EIO;
+        goto out;
     }
 
     /* Normal acquisition */

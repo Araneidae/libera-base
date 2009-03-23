@@ -36,11 +36,11 @@ or visit http://www.gnu.org
 
 extern int 
 libera_cfg_get_specific(struct libera_cfg_device *dev,
-			libera_cfg_request_t *req);
+                        libera_cfg_request_t *req);
 
 extern int 
 libera_cfg_set_specific(struct libera_cfg_device *dev,
-			libera_cfg_request_t *req);
+                        libera_cfg_request_t *req);
 
 extern libera_desc_t libera_desc;
 
@@ -56,27 +56,27 @@ static int
 libera_cfg_open(struct inode *inode, struct file *file)
 {
     struct libera_cfg_device *dev =
-	(struct libera_cfg_device *) file->private_data;
+        (struct libera_cfg_device *) file->private_data;
     
     if (!dev) return -ENODEV;
     
     mutex_lock(&dev->sem);
     /* Is it an open() for writing? */
     if (file->f_mode & FMODE_WRITE) {
-	/* Is it the first open() for writing */
-	if (!dev->master_filp)
-	    dev->master_filp = file;
-	else
-	{
-	    mutex_unlock(&dev->sem);
-	    return -EBUSY;
-	}
-	dev->writers++;
+        /* Is it the first open() for writing */
+        if (!dev->master_filp)
+            dev->master_filp = file;
+        else
+        {
+            mutex_unlock(&dev->sem);
+            return -EBUSY;
+        }
+        dev->writers++;
     }
     if (file->f_mode & FMODE_READ)  dev->readers++;
 
     PDEBUG2("Opened libera.cfg (%p): readers=%d, writers=%d\n", 
-	    file, dev->readers, dev->writers);
+            file, dev->readers, dev->writers);
 
     dev->open_count++; /* internal counter */
     mutex_unlock(&dev->sem);
@@ -96,22 +96,22 @@ static int
 libera_cfg_release(struct inode *inode, struct file *file)
 {
     struct libera_cfg_device *dev =
-	(struct libera_cfg_device *) file->private_data;
+        (struct libera_cfg_device *) file->private_data;
 
 
     dev->open_count--; /* internal counter */
 
     if (file->f_mode & FMODE_READ)  dev->readers--;
     if (file->f_mode & FMODE_WRITE) {
-	dev->writers--;
-	/* Check whether the last writer is closing */
-	if (!dev->writers)
-	    dev->master_filp = NULL;
+        dev->writers--;
+        /* Check whether the last writer is closing */
+        if (!dev->writers)
+            dev->master_filp = NULL;
     }
   
 
     PDEBUG2("Closed libera.cfg (%p): readers=%d, writers=%d\n", 
-	    file, dev->readers, dev->writers);
+            file, dev->readers, dev->writers);
 
     return 0; /* success */
 }
@@ -123,108 +123,108 @@ libera_cfg_release(struct inode *inode, struct file *file)
  */
 static int 
 libera_cfg_cmd(struct libera_cfg_device *dev,
-	       unsigned int cmd, unsigned long arg)
+               unsigned int cmd, unsigned long arg)
 {   
     int ret = 0;
     libera_cfg_request_t req;
     
     switch(cmd)
     {
-	
-	/* Generic GET method */
+        
+        /* Generic GET method */
     case LIBERA_IOC_GET_CFG:
-	/* NOTE: Although usually a GET method would only require
-	 *       copying to userland we need to read the request
-	 *       first in order to get the index.
-	 */
-	ret = copy_from_user(&req,
-			     (libera_cfg_request_t *)arg,
-			     sizeof(libera_cfg_request_t));
-	if (ret) return ret;
-	if (req.idx >= LIBERA_CFG_PARAMS_MAX)
-	    return -EINVAL;
-	
-	switch (req.idx) {
-	    /* Libera common configuration CFG parameters */
-	case LIBERA_CFG_TRIGMODE:
+        /* NOTE: Although usually a GET method would only require
+         *       copying to userland we need to read the request
+         *       first in order to get the index.
+         */
+        ret = copy_from_user(&req,
+                             (libera_cfg_request_t *)arg,
+                             sizeof(libera_cfg_request_t));
+        if (ret) return ret;
+        if (req.idx >= LIBERA_CFG_PARAMS_MAX)
+            return -EINVAL;
+        
+        switch (req.idx) {
+            /* Libera common configuration CFG parameters */
+        case LIBERA_CFG_TRIGMODE:
         case LIBERA_CFG_MCPLL:
         case LIBERA_CFG_SCPLL:
-	    req.val = dev->param[req.idx];
-	    break;
-	    
+            req.val = dev->param[req.idx];
+            break;
+            
         case LIBERA_CFG_FEATURE_CUSTOMER:
             req.val = readl(iobase + FPGA_FEATURE_CUSTOMER);
             break;
         case LIBERA_CFG_FEATURE_ITECH:
             req.val = lgbl.feature;
             break;
-	default:
-	    /* Libera family member specific CFG parameters */
-	    ret = libera_cfg_get_specific(dev, &req);	
-	}
-	if (ret) return ret;
-	ret = copy_to_user((unsigned char *)arg,
-			   &req,
-			   sizeof(libera_cfg_request_t));
-	PDEBUG2("GET_CFG: idx=%u, val=%u\n", req.idx, req.val);
-	break;
-	
-	/* Generic SET method */
+        default:
+            /* Libera family member specific CFG parameters */
+            ret = libera_cfg_get_specific(dev, &req);   
+        }
+        if (ret) return ret;
+        ret = copy_to_user((unsigned char *)arg,
+                           &req,
+                           sizeof(libera_cfg_request_t));
+        PDEBUG2("GET_CFG: idx=%u, val=%u\n", req.idx, req.val);
+        break;
+        
+        /* Generic SET method */
     case LIBERA_IOC_SET_CFG:
-	ret = copy_from_user(&req,
-			     (libera_cfg_request_t *)arg,
-			     sizeof(libera_cfg_request_t));
-	if (ret) return ret;
-	PDEBUG2("SET_CFG: idx=%u, val=%u\n", req.idx, req.val);
-	if (req.idx >= LIBERA_CFG_PARAMS_MAX)
-	    return -EINVAL;
-	
-	switch (req.idx) {
-	    /* Libera common configuration CFG parameters */
-	case LIBERA_CFG_TRIGMODE:
-	    dev->param[req.idx] = req.val;
-	    break;
+        ret = copy_from_user(&req,
+                             (libera_cfg_request_t *)arg,
+                             sizeof(libera_cfg_request_t));
+        if (ret) return ret;
+        PDEBUG2("SET_CFG: idx=%u, val=%u\n", req.idx, req.val);
+        if (req.idx >= LIBERA_CFG_PARAMS_MAX)
+            return -EINVAL;
+        
+        switch (req.idx) {
+            /* Libera common configuration CFG parameters */
+        case LIBERA_CFG_TRIGMODE:
+            dev->param[req.idx] = req.val;
+            break;
 
         case LIBERA_CFG_MCPLL:
         case LIBERA_CFG_SCPLL:
             return -EINVAL;  // Cannot set PLL status!
             break;
-	    
-	default:
-	    /* Libera family member specific CFG parameters */
-	    ret = libera_cfg_set_specific(dev, &req);	
-	}
-	if (ret) return ret;
-	
-	/* Send notification */
-	// TODO: Optimizations... what if the parameter is set to the 
-	//       same value as before the SET method?
-	libera_send_event(LIBERA_EVENT_CFG, req.idx);
-	break;
-	
-	/* Libera magic number */
+            
+        default:
+            /* Libera family member specific CFG parameters */
+            ret = libera_cfg_set_specific(dev, &req);   
+        }
+        if (ret) return ret;
+        
+        /* Send notification */
+        // TODO: Optimizations... what if the parameter is set to the 
+        //       same value as before the SET method?
+        libera_send_event(LIBERA_EVENT_CFG, req.idx);
+        break;
+        
+        /* Libera magic number */
     case LIBERA_IOC_GET_MAGIC:
-	ret = copy_to_user((int *)arg,
-			   &libera_desc.magic,
-			   sizeof(int));
-	break;
-	
-	/* Libera description */
+        ret = copy_to_user((int *)arg,
+                           &libera_desc.magic,
+                           sizeof(int));
+        break;
+        
+        /* Libera description */
     case LIBERA_IOC_GET_DESC:
-	ret = copy_to_user((libera_desc_t *)arg,
-			   &libera_desc,
-			   sizeof(libera_desc_t));
-	break;
-	
+        ret = copy_to_user((libera_desc_t *)arg,
+                           &libera_desc,
+                           sizeof(libera_desc_t));
+        break;
+        
     default:
-	/* NOTE: Returning -EINVAL for invalid argument would make more sense, 
-	 *       but acoording to POSIX -ENOTTY should be returned in 
-	 *       such cases.
-	 */
-	PDEBUG("CFG: Invalid ioctl() argument %d (file: %s, line: %d)\n", 
-	       cmd, __FILE__, __LINE__);
-	return -ENOTTY;
-	
+        /* NOTE: Returning -EINVAL for invalid argument would make more sense, 
+         *       but acoording to POSIX -ENOTTY should be returned in 
+         *       such cases.
+         */
+        PDEBUG("CFG: Invalid ioctl() argument %d (file: %s, line: %d)\n", 
+               cmd, __FILE__, __LINE__);
+        return -ENOTTY;
+        
     } /* switch(cmd) */
     
     return ret;
@@ -238,18 +238,18 @@ libera_cfg_cmd(struct libera_cfg_device *dev,
  */
 static int
 libera_cfg_ioctl(struct inode *inode, struct file *file,
-		 unsigned int cmd, unsigned long arg)
+                 unsigned int cmd, unsigned long arg)
 {
     struct libera_cfg_device *dev =
-	(struct libera_cfg_device *) file->private_data;
+        (struct libera_cfg_device *) file->private_data;
     int err = 0;
 
     /* Sanity checks on cmd */
     if (_IOC_TYPE(cmd) != LIBERA_IOC_MAGIC) return -ENOTTY;
     if ((_IOC_NR(cmd) & LIBERA_IOC_MASK) != LIBERA_IOC_CFG) 
     {
-	ASSERT(TRUE);
-	return -ENOTTY;
+        ASSERT(TRUE);
+        return -ENOTTY;
     }
     
     if (_IOC_DIR(cmd) & _IOC_READ)
@@ -257,8 +257,8 @@ libera_cfg_ioctl(struct inode *inode, struct file *file,
     else if (_IOC_DIR(cmd) & _IOC_WRITE)
         err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
     if (err) {
-	ASSERT(TRUE);
-	return -EFAULT;
+        ASSERT(TRUE);
+        return -EFAULT;
     }
     
     /* Access control:
@@ -268,9 +268,9 @@ libera_cfg_ioctl(struct inode *inode, struct file *file,
      */
     if (_IOC_DIR(cmd) == _IOC_WRITE) /* Is this a SET_ method? */
     {
-	/* File descriptor access control */
-	if (dev->master_filp != file)
-	    return -EPERM;
+        /* File descriptor access control */
+        if (dev->master_filp != file)
+            return -EPERM;
     }
     
     /* Decode comands and take action on hardware */

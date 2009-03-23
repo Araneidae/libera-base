@@ -137,22 +137,22 @@ typedef enum
 /** Available modes of operation. */
 // TOOD: Possibly remove from the driver
 typedef enum {
-	LIBERA_MODE_UNKNOWN = 0,	//!< Libera mode unknown or not set.
-	LIBERA_MODE_DD,				//!< Data-on-demand mode.
-	LIBERA_MODE_SA,				//!< Slow Acquisition mode.
-	LIBERA_MODE_PM,				//!< Post-Mortem mode.
-	LIBERA_MODE_ADC,			//!< ADC-rate buffer mode.
-	LIBERA_MODE_AVERAGE,		//!< calc average value between two triggers
-	LIBERA_MODE_ADC_CW,			//!< ADC-rate buffer mode CW.
-	LIBERA_MODE_ADC_SP,			//!< ADC-rate buffer mode CW.
-	LIBERA_MODE_LAST			//!< last item
+        LIBERA_MODE_UNKNOWN = 0,        //!< Libera mode unknown or not set.
+        LIBERA_MODE_DD,                         //!< Data-on-demand mode.
+        LIBERA_MODE_SA,                         //!< Slow Acquisition mode.
+        LIBERA_MODE_PM,                         //!< Post-Mortem mode.
+        LIBERA_MODE_ADC,                        //!< ADC-rate buffer mode.
+        LIBERA_MODE_AVERAGE,            //!< calc average value between two triggers
+        LIBERA_MODE_ADC_CW,                     //!< ADC-rate buffer mode CW.
+        LIBERA_MODE_ADC_SP,                     //!< ADC-rate buffer mode CW.
+        LIBERA_MODE_LAST                        //!< last item
 } LIBERA_MODE;
 
 /** Available trigger modes. */
 typedef enum {
-	LIBERA_TRIGMODE_UNKNOWN = 0,	//!< Unknown trigger mode.
-	LIBERA_TRIGMODE_GET,	        //!< Get trigger mode.
-	LIBERA_TRIGMODE_SET,	        //!< Set trigger mode.
+        LIBERA_TRIGMODE_UNKNOWN = 0,    //!< Unknown trigger mode.
+        LIBERA_TRIGMODE_GET,            //!< Get trigger mode.
+        LIBERA_TRIGMODE_SET,            //!< Set trigger mode.
 } LIBERA_TRIGMODE;
 
 
@@ -251,8 +251,8 @@ typedef enum {
 #define LIBERA_INS_TYPE(_cfg)      ((_cfg & (0xF << 24)) >> 24)
 #define LIBERA_ATOM_SIZE(_cfg)     ((_cfg & (0xF << 20)) >> 20)
 
-#define LIBERA_IS_BPM(_cfg)	   (LIBERA_INSTRUMENT(_cfg) == LIBERA_INSTRUMENT_BPM)
-#define LIBERA_IS_BBB(_cfg)	   (LIBERA_INSTRUMENT(_cfg) == LIBERA_INSTRUMENT_BBB)
+#define LIBERA_IS_BPM(_cfg)        (LIBERA_INSTRUMENT(_cfg) == LIBERA_INSTRUMENT_BPM)
+#define LIBERA_IS_BBB(_cfg)        (LIBERA_INSTRUMENT(_cfg) == LIBERA_INSTRUMENT_BBB)
 
 #define LIBERA_IS_BRILLIANCE(_cfg) (LIBERA_IS_BPM(_cfg) && LIBERA_INS_TYPE(_cfg) == LIBERA_TYPE_BRILLIANCE)
 
@@ -272,17 +272,17 @@ enum libera_ioc_ids_t
     /***********************************/
     /* GENERIC: Generic, nameless CFG parameters */
     LIBERA_IOC_GET_CFG       = _IOWR(LIBERA_IOC_MAGIC,
-				     LIBERA_CFG_REQUEST,
-				     libera_cfg_request_t),
+                                     LIBERA_CFG_REQUEST,
+                                     libera_cfg_request_t),
     LIBERA_IOC_SET_CFG       = _IOW(LIBERA_IOC_MAGIC,
-				    LIBERA_CFG_REQUEST,
-				    libera_cfg_request_t),
+                                    LIBERA_CFG_REQUEST,
+                                    libera_cfg_request_t),
     /* MAGIC: Libera magic number */
     LIBERA_IOC_GET_MAGIC     = _IOR(LIBERA_IOC_MAGIC,
-				    LIBERA_CFG_MAGIC, int),
+                                    LIBERA_CFG_MAGIC, int),
     /* DESC: Libera description */
     LIBERA_IOC_GET_DESC      = _IOR(LIBERA_IOC_MAGIC,
-				    LIBERA_CFG_DESC, libera_desc_t),
+                                    LIBERA_CFG_DESC, libera_desc_t),
     
     
     /*******************************/
@@ -300,21 +300,21 @@ enum libera_ioc_ids_t
     /*****************************/
     /* DEC: Decimation */
     LIBERA_IOC_GET_DEC       = _IOR(LIBERA_IOC_MAGIC, 
-				    LIBERA_DD_DEC, libera_U32_t),
+                                    LIBERA_DD_DEC, libera_U32_t),
     LIBERA_IOC_SET_DEC       = _IOW(LIBERA_IOC_MAGIC,
-				    LIBERA_DD_DEC, libera_U32_t),
+                                    LIBERA_DD_DEC, libera_U32_t),
     /* DD_TSTAMP: DD data timestamp */
     LIBERA_IOC_GET_DD_TSTAMP = _IOR(LIBERA_IOC_MAGIC, 
-				    LIBERA_DD_TSTAMP, 
-				    libera_timestamp_t),
+                                    LIBERA_DD_TSTAMP, 
+                                    libera_timestamp_t),
 
     /*****************************/
     /* Post Mortem Parameters */
     /*****************************/
     /* PM_TSTAMP: PM data timestamp */
     LIBERA_IOC_GET_PM_TSTAMP = _IOR(LIBERA_IOC_MAGIC, 
-				    LIBERA_PM_TSTAMP, 
-				    libera_timestamp_t),
+                                    LIBERA_PM_TSTAMP, 
+                                    libera_timestamp_t),
 
      /* All DEBUG IDs have to be declared at the bottom of enum! */
     
@@ -374,110 +374,110 @@ typedef struct
 enum libera_event_ids_t
 {    
     LIBERA_EVENT_SET_DAC_A       =  _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_DAC_A,
-					 libera_S32_t),
+                                         LIBERA_EVENT_DAC_A,
+                                         libera_S32_t),
     
     LIBERA_EVENT_SET_DAC_B       =  _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_DAC_B,
-					 libera_S32_t),
+                                         LIBERA_EVENT_DAC_B,
+                                         libera_S32_t),
     
     LIBERA_EVENT_SET_SC_EVENT    =  _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_SC_EVENT,
-					 libera_S32_t),
+                                         LIBERA_EVENT_SC_EVENT,
+                                         libera_S32_t),
     
     LIBERA_EVENT_ENABLE_SC_TRIG  =  _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_SC_TRIG,
-					 libera_S32_t),
+                                         LIBERA_EVENT_SC_TRIG,
+                                         libera_S32_t),
     
     LIBERA_EVENT_ENABLE_MC_TRIG  =  _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_MC_TRIG,
-					 libera_S32_t),
+                                         LIBERA_EVENT_MC_TRIG,
+                                         libera_S32_t),
     
     LIBERA_EVENT_GET_SC_TRIGGER_19= _IOR(LIBERA_EVENT_MAGIC, 
-					 LIBERA_EVENT_SC_TRIGGER_19,
-					 libera_hw_time_t),
+                                         LIBERA_EVENT_SC_TRIGGER_19,
+                                         libera_hw_time_t),
     
     LIBERA_EVENT_GET_MC_TRIGGER_19= _IOR(LIBERA_EVENT_MAGIC, 
-					 LIBERA_EVENT_MC_TRIGGER_19,
-					 libera_hw_time_t),
+                                         LIBERA_EVENT_MC_TRIGGER_19,
+                                         libera_hw_time_t),
     
     LIBERA_EVENT_GET_SC_TRIGGER_10= _IOR(LIBERA_EVENT_MAGIC, 
-					 LIBERA_EVENT_SC_TRIGGER_10,
-					 libera_hw_time_t),
+                                         LIBERA_EVENT_SC_TRIGGER_10,
+                                         libera_hw_time_t),
     
     LIBERA_EVENT_GET_SC_TRIGGER_9=  _IOR(LIBERA_EVENT_MAGIC, 
-					 LIBERA_EVENT_SC_TRIGGER_9,
-					 libera_hw_time_t),
+                                         LIBERA_EVENT_SC_TRIGGER_9,
+                                         libera_hw_time_t),
     
     LIBERA_EVENT_GET_MC_TRIGGER_10= _IOR(LIBERA_EVENT_MAGIC, 
-					 LIBERA_EVENT_MC_TRIGGER_10,
-					 libera_hw_time_t),
+                                         LIBERA_EVENT_MC_TRIGGER_10,
+                                         libera_hw_time_t),
 
     /* ST: System Time */
     LIBERA_EVENT_GET_ST            = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_ST,
-					  struct timespec),
+                                          LIBERA_EVENT_ST,
+                                          struct timespec),
     LIBERA_EVENT_SET_ST            = _IOW(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_ST,
-					  libera_HRtimestamp_t),
+                                          LIBERA_EVENT_ST,
+                                          libera_HRtimestamp_t),
     
     /* MT: Machine Time */
     LIBERA_EVENT_GET_MT            = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_MT, 
-					  libera_hw_time_t),
+                                          LIBERA_EVENT_MT, 
+                                          libera_hw_time_t),
     LIBERA_EVENT_SET_MT            = _IOW(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_MT,
-					  libera_HRtimestamp_t),
+                                          LIBERA_EVENT_MT,
+                                          libera_HRtimestamp_t),
     
     /* Transfer of measured MC frequency f_MC */
     LIBERA_EVENT_GET_FLMC          = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_FLMC,
-					  libera_U32_t),
+                                          LIBERA_EVENT_FLMC,
+                                          libera_U32_t),
     LIBERA_EVENT_SET_FLMC          = _IOW(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_FLMC,
-					  libera_U32_t),
+                                          LIBERA_EVENT_FLMC,
+                                          libera_U32_t),
     
     LIBERA_EVENT_GET_MCPHI         = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_MCPHI,
-					  libera_hw_time_t),
+                                          LIBERA_EVENT_MCPHI,
+                                          libera_hw_time_t),
 
     LIBERA_EVENT_SET_MCPHI        = _IOW(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_MCPHI,
-					  libera_hw_time_t),
+                                          LIBERA_EVENT_MCPHI,
+                                          libera_hw_time_t),
 
     LIBERA_EVENT_GET_SCPHI         = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_SCPHI,
-					  libera_hw_time_t),
+                                          LIBERA_EVENT_SCPHI,
+                                          libera_hw_time_t),
 
     LIBERA_EVENT_SET_SCPHI        = _IOW(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_SCPHI,
-					  libera_hw_time_t),
+                                          LIBERA_EVENT_SCPHI,
+                                          libera_hw_time_t),
 
     /* Current Libera time */
     LIBERA_EVENT_GET_CTIME         = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_CTIME,
-					  libera_Ltimestamp_t),
+                                          LIBERA_EVENT_CTIME,
+                                          libera_Ltimestamp_t),
     
     /* Libera time of the last TRIGGER trigger */
     LIBERA_EVENT_GET_TRIG_TRIGGER  = _IOR(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_TRIG_TRIGGER, 
-					  libera_Ltimestamp_t),
+                                          LIBERA_EVENT_TRIG_TRIGGER, 
+                                          libera_Ltimestamp_t),
     
     LIBERA_EVENT_GET_MASK          = _IOR(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_MASK, 
-					 libera_U32_t),
+                                         LIBERA_EVENT_MASK, 
+                                         libera_U32_t),
     
     LIBERA_EVENT_SET_MASK          = _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_MASK, 
-					 libera_U32_t),
+                                         LIBERA_EVENT_MASK, 
+                                         libera_U32_t),
     
     LIBERA_EVENT_FLUSH             = _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_FLUSHING,
-					 libera_U32_t),
+                                         LIBERA_EVENT_FLUSHING,
+                                         libera_U32_t),
 
     LIBERA_EVENT_ACQ_PM            = _IOW(LIBERA_EVENT_MAGIC,
-					  LIBERA_EVENT_PMBUF,
-					  libera_U32_t),
+                                          LIBERA_EVENT_PMBUF,
+                                          libera_U32_t),
 
     LIBERA_EVENT_GET_MC_TRIGGER_1 = _IOR(LIBERA_EVENT_MAGIC,
                                          LIBERA_EVENT_MC_TRIGGER_1,
@@ -510,25 +510,25 @@ enum libera_event_ids_t
     /* All DEBUG IDs have to be declared at the bottom of enum! */
 #ifdef DEBUG
     LIBERA_EVENT_GET_TRIGGER_BLOCKED = _IOR(LIBERA_EVENT_MAGIC,
-					    LIBERA_EVENT_TRIGGER_BLOCK, 
-					    libera_Ltimestamp_t),
+                                            LIBERA_EVENT_TRIGGER_BLOCK, 
+                                            libera_Ltimestamp_t),
 
     LIBERA_EVENT_SET_OFFPLL          = _IOW(LIBERA_EVENT_MAGIC,
-					    LIBERA_EVENT_OFFPLL,
-					    libera_hw_time_t),
+                                            LIBERA_EVENT_OFFPLL,
+                                            libera_hw_time_t),
     
     LIBERA_EVENT_PEEK             = _IOR(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_PEEK_POKE,
-					 libera_peek_poke_t),
+                                         LIBERA_EVENT_PEEK_POKE,
+                                         libera_peek_poke_t),
     
     
     LIBERA_EVENT_POKE             = _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_PEEK_POKE,
-					 libera_peek_poke_t),
+                                         LIBERA_EVENT_PEEK_POKE,
+                                         libera_peek_poke_t),
     
     LIBERA_EVENT_EVENT_SIM        = _IOW(LIBERA_EVENT_MAGIC,
-					 LIBERA_EVENT_EVENTSIM, 
-					 libera_U32_t),
+                                         LIBERA_EVENT_EVENTSIM, 
+                                         libera_U32_t),
     
 #endif
 };
@@ -576,7 +576,7 @@ enum libera_dsc_ids_t
 
 
 #define TRIGGER_BIT(x)     (1 << (x+22))
-	
+        
 #ifdef __cplusplus
 }
 #endif

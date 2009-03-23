@@ -33,109 +33,108 @@ or visit http://www.gnu.org
 
 static inline void flush_saFIFO(struct libera_sa_fifo *q)
 {
-	q->put=q->get=0;
+    q->put=q->get=0;
 }
 
 static inline int len_saFIFO(struct libera_sa_fifo *q)
 {
-	return ( (q->put + SA_LOG - q->get) & SA_LOG_MASK );
+    return ( (q->put + SA_LOG - q->get) & SA_LOG_MASK );
 }
 
 static inline int not_empty_saFIFO(struct libera_sa_fifo *q)
 {
-	return (q->put != q->get);
+    return (q->put != q->get);
 }
 
 static inline int empty_saFIFO(struct libera_sa_fifo *q)
 {
-	return (q->put == q->get);
+    return (q->put == q->get);
 }
 
 static inline int free_saFIFO(struct libera_sa_fifo *q)
 {
-	int len;
-	len = len_saFIFO(q);
-	return ( SA_LOG-len); 
+    int len = len_saFIFO(q);
+    return ( SA_LOG-len); 
 }
 
 static inline int putTo_saFIFO(struct libera_sa_fifo *q, libera_atom_sa_t *data)
 {
-  register int index;
-  if((index=((q->put + 1) & SA_LOG_MASK)) == q->get)
+    register int index;
+    if((index=((q->put + 1) & SA_LOG_MASK)) == q->get)
     {
-      return -1;  /* fifo would overflow */
+        return -1;  /* fifo would overflow */
     }
-  else
+    else
     {
-      q->data[index] = *data;
-      q->put = index;
-      return 0;
+        q->data[index] = *data;
+        q->put = index;
+        return 0;
     }
 }
 
 static inline libera_atom_sa_t* getFrom_saFIFO(struct libera_sa_fifo* const q)
 {
-  if(q->put == q->get)
+    if(q->put == q->get)
     {
-      return NULL; /* fifo empty */
+        return NULL; /* fifo empty */
     }
-  else
+    else
     {
-      q->get = (q->get + 1) & SA_LOG_MASK;
-      return & q->data[q->get];
+        q->get = (q->get + 1) & SA_LOG_MASK;
+        return & q->data[q->get];
     }
 }
 
 static inline  ssize_t libera_pipe_write (struct sa_local *sa_pipe, const char *buf, size_t count)
 {
-	ssize_t ret, written=0;
-	size_t sa_count,i;
+    ssize_t ret, written=0;
+    size_t sa_count,i;
 
 
-	/* Null write succeeds */
-	ret=0;
-	if (0==count) goto out;
+    /* Null write succeeds */
+    ret=0;
+    if (0==count) goto out;
 
-	/* Filter out non-divisable count values */
-	if (count%sizeof(libera_atom_sa_t)){
-	
-		PDEBUG("SA:libera_pipe_write(): Inappropriate count size. \n");
-		ret=-EINVAL;
-		goto out;
-	}
+    /* Filter out non-divisable count values */
+    if (count%sizeof(libera_atom_sa_t)){
 
-	
-	sa_count = count/sizeof(libera_atom_sa_t);
+        PDEBUG("SA:libera_pipe_write(): Inappropriate count size. \n");
+        ret=-EINVAL;
+        goto out;
+    }
 
 
-	/* check if there is enough free space in pipe */
+    sa_count = count/sizeof(libera_atom_sa_t);
 
-	if (free_saFIFO(&sa_pipe->pipe) < sa_count) {
-		ret=-EFAULT;
-		goto out;
-	}
-	
 
-	/* write must be atomic  */
-	for(i=0;i<sa_count;i++){
+    /* check if there is enough free space in pipe */
 
-		libera_atom_sa_t data;
+    if (free_saFIFO(&sa_pipe->pipe) < sa_count) {
+        ret=-EFAULT;
+        goto out;
+    }
 
-		memcpy(&data,buf,sizeof(libera_atom_sa_t));
 
-		if (putTo_saFIFO(&sa_pipe->pipe,&data)) {
-			PDEBUG("SA:putTo_saFIFO: fifo would owerflow\n");
-			ret=written;
-			goto out;
-		}
-		
-		written += sizeof(libera_atom_sa_t);	
-		buf +=sizeof(libera_atom_sa_t);
-		ret=written;
-	}	
+    /* write must be atomic  */
+    for(i=0;i<sa_count;i++){
+
+        libera_atom_sa_t data;
+
+        memcpy(&data,buf,sizeof(libera_atom_sa_t));
+
+        if (putTo_saFIFO(&sa_pipe->pipe,&data)) {
+            PDEBUG("SA:putTo_saFIFO: fifo would owerflow\n");
+            ret=written;
+            goto out;
+        }
+
+        written += sizeof(libera_atom_sa_t);    
+        buf +=sizeof(libera_atom_sa_t);
+        ret=written;
+    }       
 
 out:
-	return ret;
+    return ret;
 
 }
 #endif /* _LIBERA_SA_H_ */

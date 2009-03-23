@@ -46,30 +46,30 @@ or visit http://www.gnu.org
  */
 static int 
 libera_register_pipe(struct libera_registered_pipes *pipe, 
-		     struct sa_local *sa_fifo)
+                     struct sa_local *sa_fifo)
 {
-	int i;
-	int occupied = 1;
-	int next = pipe->next;
+        int i;
+        int occupied = 1;
+        int next = pipe->next;
     
-	pipe->sa_pipe[next] = sa_fifo; /* Store and mark pipe occupied */
-	pipe->registered++;
-	PDEBUG2("Registered pipe #%d on sa_pipe %p.\n", next, sa_fifo);
+        pipe->sa_pipe[next] = sa_fifo; /* Store and mark pipe occupied */
+        pipe->registered++;
+        PDEBUG2("Registered pipe #%d on sa_pipe %p.\n", next, sa_fifo);
 
-	/* Find new non-occupied = free pipe */
-	for(i=0;i<LIBERA_SA_MAX_READERS;i++)
-	{
-		if (!pipe->sa_pipe[i]) {
-		
-			pipe->next = i;
-			occupied = 1;
-			break;
-		}
+        /* Find new non-occupied = free pipe */
+        for(i=0;i<LIBERA_SA_MAX_READERS;i++)
+        {
+                if (!pipe->sa_pipe[i]) {
+                
+                        pipe->next = i;
+                        occupied = 1;
+                        break;
+                }
     }
 
-	if(occupied)
-	return -1;
-	else return 0;
+        if(occupied)
+        return -1;
+        else return 0;
 }     
 
 
@@ -81,27 +81,27 @@ libera_register_pipe(struct libera_registered_pipes *pipe,
  */
 static int 
 libera_unregister_pipe(struct libera_registered_pipes *pipe,
-		       struct sa_local *sa_fifo)
+                       struct sa_local *sa_fifo)
 {
-	int i;
-	int found = 0;
+        int i;
+        int found = 0;
     
-	for(i=0;i<LIBERA_SA_MAX_READERS;i++)
+        for(i=0;i<LIBERA_SA_MAX_READERS;i++)
     {
-		if (pipe->sa_pipe[i] == sa_fifo) {
-			found = 1;
-			break;
-		}
-	}
+                if (pipe->sa_pipe[i] == sa_fifo) {
+                        found = 1;
+                        break;
+                }
+        }
 
-	if (found) {
-		pipe->registered--;
-		pipe->sa_pipe[i] = NULL; /* Mark pipe non-occupied = free */
-		pipe->next = i; /* Reuse */
-		PDEBUG2("Unregistered pipe #%d on sa_pipe %p.\n", i, sa_fifo);
-		return 0;
+        if (found) {
+                pipe->registered--;
+                pipe->sa_pipe[i] = NULL; /* Mark pipe non-occupied = free */
+                pipe->next = i; /* Reuse */
+                PDEBUG2("Unregistered pipe #%d on sa_pipe %p.\n", i, sa_fifo);
+                return 0;
     }
-	else return -1;
+        else return -1;
 }     
 
 
@@ -116,68 +116,68 @@ libera_unregister_pipe(struct libera_registered_pipes *pipe,
 static int 
 libera_sa_open(struct inode *inode, struct file *file)
 {
-	struct libera_sa_device *dev =
-			(struct libera_sa_device *) file->private_data;
-	struct sa_local *pipe_sa=NULL; 
+        struct libera_sa_device *dev =
+                        (struct libera_sa_device *) file->private_data;
+        struct sa_local *pipe_sa=NULL; 
 
-	if (!dev) return -ENODEV;
+        if (!dev) return -ENODEV;
 
-	mutex_lock(&dev->sem);
+        mutex_lock(&dev->sem);
 
-	/* We do not allow writing */
-	if (file->f_mode & FMODE_WRITE) {
-		mutex_unlock(&dev->sem);
-		return -EACCES;
-	// TODO: Consider returning Operation not permitted (-EPERM)
+        /* We do not allow writing */
+        if (file->f_mode & FMODE_WRITE) {
+                mutex_unlock(&dev->sem);
+                return -EACCES;
+        // TODO: Consider returning Operation not permitted (-EPERM)
     }
 
     if (dev->pipe.registered < LIBERA_SA_MAX_READERS) {
     
-		/* Get a fresh memory space for a new pipe */ 
-		pipe_sa = (struct sa_local *)
-				kmalloc(sizeof(struct sa_local), GFP_KERNEL);
+                /* Get a fresh memory space for a new pipe */ 
+                pipe_sa = (struct sa_local *)
+                                kmalloc(sizeof(struct sa_local), GFP_KERNEL);
 
-		if (pipe_sa) {
+                if (pipe_sa) {
 
-			/* No junk in pipe_inode! */
-			memset(pipe_sa, 0, sizeof(struct sa_local)); 
-			mutex_init(&pipe_sa->sem);
-			init_waitqueue_head(&pipe_sa->wait);
-			flush_saFIFO(&pipe_sa->pipe); 
-		}
-		else {
-			mutex_unlock(&dev->sem);
-			return -ENOMEM;
-		}
-	
-		/* Store current pipe_inode for our reference */
-		file->f_version = (unsigned long)pipe_sa;
-	    
-		libera_register_pipe(&dev->pipe, pipe_sa);
+                        /* No junk in pipe_inode! */
+                        memset(pipe_sa, 0, sizeof(struct sa_local)); 
+                        mutex_init(&pipe_sa->sem);
+                        init_waitqueue_head(&pipe_sa->wait);
+                        flush_saFIFO(&pipe_sa->pipe); 
+                }
+                else {
+                        mutex_unlock(&dev->sem);
+                        return -ENOMEM;
+                }
+        
+                /* Store current pipe_inode for our reference */
+                file->f_version = (unsigned long)pipe_sa;
+            
+                libera_register_pipe(&dev->pipe, pipe_sa);
     }
     else {
-		mutex_unlock(&dev->sem);
-		return -EBUSY;
-	}
-	
-	
+                mutex_unlock(&dev->sem);
+                return -EBUSY;
+        }
+        
+        
     /* Is it the first open() for reading */
     if (file->f_mode & FMODE_READ) {
 
-		if (!dev->master_filp) {
-			dev->master_filp = file;
-		}
-	}
+                if (!dev->master_filp) {
+                        dev->master_filp = file;
+                }
+        }
 
-	dev->readers++;
+        dev->readers++;
 
-	PDEBUG2("Opened libera.sa (%p): readers=%d, writers=%d\n", 
-		file, dev->readers, dev->writers);
+        PDEBUG2("Opened libera.sa (%p): readers=%d, writers=%d\n", 
+                file, dev->readers, dev->writers);
 
-	dev->open_count++; /* internal counter */
-	mutex_unlock(&dev->sem);
+        dev->open_count++; /* internal counter */
+        mutex_unlock(&dev->sem);
     
-	return 0;          
+        return 0;          
 }
 
 
@@ -192,37 +192,37 @@ libera_sa_open(struct inode *inode, struct file *file)
 static int 
 libera_sa_release(struct inode *inode, struct file *file)
 {
-	struct libera_sa_device *dev =
-		(struct libera_sa_device *) file->private_data;
-	struct sa_local  *pipe_sa = (struct sa_local *)file->f_version; 
+        struct libera_sa_device *dev =
+                (struct libera_sa_device *) file->private_data;
+        struct sa_local  *pipe_sa = (struct sa_local *)file->f_version; 
 
     
-	mutex_lock(&dev->sem);	
+        mutex_lock(&dev->sem);  
     
-	if (libera_unregister_pipe(&dev->pipe, pipe_sa) < 0) {
-		PDEBUG("Cannot unregister pipe, pipe_sa address %p\n",pipe_sa);
-		goto out;
+        if (libera_unregister_pipe(&dev->pipe, pipe_sa) < 0) {
+                PDEBUG("Cannot unregister pipe, pipe_sa address %p\n",pipe_sa);
+                goto out;
     }
-	
-	kfree(pipe_sa);
-	file->f_version = (unsigned long)NULL;
+        
+        kfree(pipe_sa);
+        file->f_version = (unsigned long)NULL;
    
 
 out:
-	dev->open_count--; /* internal counter */
-	dev->readers--;
+        dev->open_count--; /* internal counter */
+        dev->readers--;
     
-	/* Check whether the last reader is closing */
-	if (!dev->readers) {
-		dev->master_filp = NULL;
-	}
+        /* Check whether the last reader is closing */
+        if (!dev->readers) {
+                dev->master_filp = NULL;
+        }
   
-	mutex_unlock(&dev->sem);
+        mutex_unlock(&dev->sem);
 
-	PDEBUG2("Closed libera.sa device: readers=%d, writers=%d\n", 
-		dev->readers, dev->writers);
+        PDEBUG2("Closed libera.sa device: readers=%d, writers=%d\n", 
+                dev->readers, dev->writers);
 
-	return 0;
+        return 0;
 }
 
 
@@ -236,100 +236,100 @@ out:
 static ssize_t 
 libera_sa_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
 {
-	struct sa_local *sa_pipe = (struct sa_local *) file->f_version;
-	ssize_t ret;
-	wait_queue_t wait;
-	wait_queue_head_t* wq = &sa_pipe->wait;
-	size_t sa_count, i;
-	libera_atom_sa_t *data;
+        struct sa_local *sa_pipe = (struct sa_local *) file->f_version;
+        ssize_t ret;
+        wait_queue_t wait;
+        wait_queue_head_t* wq = &sa_pipe->wait;
+        size_t sa_count, i;
+        libera_atom_sa_t *data;
    
-	ret = 0; 
+        ret = 0; 
 
     /* Seeks are not allowed on pipes */
-	if (*f_pos != file->f_pos) {
+        if (*f_pos != file->f_pos) {
 
-		ret = -ESPIPE;
-		goto out_nolock;  
+                ret = -ESPIPE;
+                goto out_nolock;  
 
-	}
+        }
 
     /* Always return 0 on null read */
-	if (0 == count) {
-		ret = 0;
-		goto out_nolock;
-	}
+        if (0 == count) {
+                ret = 0;
+                goto out_nolock;
+        }
     
     /* Get the device semaphore */
-	if (mutex_lock_interruptible(&sa_pipe->sem)){
+        if (mutex_lock_interruptible(&sa_pipe->sem)){
 
-		ret = -ERESTARTSYS;
-		goto out_nolock;
-	}
+                ret = -ERESTARTSYS;
+                goto out_nolock;
+        }
 
     
     /* Filter out strange, non-atomically-dividable values. */
-	if (count % sizeof(libera_atom_sa_t)) {
-		PDEBUG("SA: read(): Inapropriate count size.\n");
-		ret = -EINVAL;
-		goto out;
+        if (count % sizeof(libera_atom_sa_t)) {
+                PDEBUG("SA: read(): Inapropriate count size.\n");
+                ret = -EINVAL;
+                goto out;
     } 
-			      
+                              
 
     /* Check fifo size & wait/sleep if neccessary */
-	if (empty_saFIFO(&sa_pipe->pipe)) {
+        if (empty_saFIFO(&sa_pipe->pipe)) {
     
-		if (file->f_flags & O_NONBLOCK) {
-			ret=-EAGAIN;
-			goto out;
-		}
-		init_waitqueue_entry(&wait,current);
-		add_wait_queue(wq,&wait);
-		for (;;)
-		{
-			set_current_state(TASK_INTERRUPTIBLE);
-			if (not_empty_saFIFO(&sa_pipe->pipe)) {
-				break;
-			}
-			if (!signal_pending(current)) {
-				mutex_unlock(&sa_pipe->sem);
-				schedule();
-				mutex_lock(&sa_pipe->sem);
-				continue;
-			}
-			ret = -ERESTARTSYS;
-			break;
-		}
-		set_current_state(TASK_RUNNING);
-		remove_wait_queue(wq, &wait);
-	}
+                if (file->f_flags & O_NONBLOCK) {
+                        ret=-EAGAIN;
+                        goto out;
+                }
+                init_waitqueue_entry(&wait,current);
+                add_wait_queue(wq,&wait);
+                for (;;)
+                {
+                        set_current_state(TASK_INTERRUPTIBLE);
+                        if (not_empty_saFIFO(&sa_pipe->pipe)) {
+                                break;
+                        }
+                        if (!signal_pending(current)) {
+                                mutex_unlock(&sa_pipe->sem);
+                                schedule();
+                                mutex_lock(&sa_pipe->sem);
+                                continue;
+                        }
+                        ret = -ERESTARTSYS;
+                        break;
+                }
+                set_current_state(TASK_RUNNING);
+                remove_wait_queue(wq, &wait);
+        }
 
-	if (ret) goto out;
+        if (ret) goto out;
 
-	sa_count = count/sizeof(libera_atom_sa_t);
-	sa_count = sa_count < len_saFIFO(&sa_pipe->pipe) ?
-				sa_count : len_saFIFO(&sa_pipe->pipe);  
+        sa_count = count/sizeof(libera_atom_sa_t);
+        sa_count = sa_count < len_saFIFO(&sa_pipe->pipe) ?
+                                sa_count : len_saFIFO(&sa_pipe->pipe);  
 
-	/* Get data from FIFO */
-	for(i=0; i < sa_count; i++) {
-		if (! (data = getFrom_saFIFO(&sa_pipe->pipe)) ) {
-			ret = -EFAULT;
-			goto out;
-		}
-		if (copy_to_user(buf, data, sizeof(libera_atom_sa_t))) {
-		 	ret = -EFAULT;
-		 	goto out;
-		}
-		else {
-			ret += sizeof(libera_atom_sa_t);
-			buf += sizeof(libera_atom_sa_t);
-		}  
-	}
-	
+        /* Get data from FIFO */
+        for(i=0; i < sa_count; i++) {
+                if (! (data = getFrom_saFIFO(&sa_pipe->pipe)) ) {
+                        ret = -EFAULT;
+                        goto out;
+                }
+                if (copy_to_user(buf, data, sizeof(libera_atom_sa_t))) {
+                        ret = -EFAULT;
+                        goto out;
+                }
+                else {
+                        ret += sizeof(libera_atom_sa_t);
+                        buf += sizeof(libera_atom_sa_t);
+                }  
+        }
+        
 out:
-	mutex_unlock(&sa_pipe->sem);
+        mutex_unlock(&sa_pipe->sem);
     
 out_nolock:   
-	return ret;
+        return ret;
 
 }
 
@@ -339,8 +339,8 @@ out_nolock:
  * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 66.
  */
 struct file_operations libera_sa_fops = {
-	owner:          THIS_MODULE,
-	read:           libera_sa_read,
-	open:           libera_sa_open,
-	release:        libera_sa_release
+        owner:          THIS_MODULE,
+        read:           libera_sa_read,
+        open:           libera_sa_open,
+        release:        libera_sa_release
 };

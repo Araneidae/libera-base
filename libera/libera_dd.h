@@ -47,10 +47,10 @@ static inline void
 lst2st(const libera_hw_time_t *lst,
        struct timespec *st)
 {
-	uint32_t rem;
-	st->tv_sec = div_u64_rem((*lst), LSC_FREQ, &rem);
-	st->tv_nsec = rem;
-	st->tv_nsec *= (NS_IN_SECOND / LSC_FREQ);
+        uint32_t rem;
+        st->tv_sec = div_u64_rem((*lst), LSC_FREQ, &rem);
+        st->tv_nsec = rem;
+        st->tv_nsec *= (NS_IN_SECOND / LSC_FREQ);
 }
 
 
@@ -68,7 +68,7 @@ static inline void
 lmt2mt(const libera_hw_time_t *lmt,
        libera_hw_time_t *mt)
 {
-	*mt = div_u64((*lmt), lgbl.d);
+        *mt = div_u64((*lmt), lgbl.d);
 }
 
 
@@ -81,15 +81,15 @@ get_circ_offset_lmt(libera_hw_time_t *lmt)
 {
     struct libera_event_device  *event  = &libera_event;
 
-	uint64_t dummy_first_part, dummy_divisor;
-	uint32_t return_value;
+        uint64_t dummy_first_part, dummy_divisor;
+        uint32_t return_value;
 
-	dummy_first_part = (*lmt - (event->settime.lmt.off + event->HB_start_lmt) + lgbl.d/2);
-	dummy_divisor = div_u64(dummy_first_part, lgbl.d);
+        dummy_first_part = (*lmt - (event->settime.lmt.off + event->HB_start_lmt) + lgbl.d/2);
+        dummy_divisor = div_u64(dummy_first_part, lgbl.d);
 
-	(void)div_u64_rem(dummy_divisor, LIBERA_DD_CIRCBUF_ATOMS, &return_value);
-	
-	return return_value;
+        (void)div_u64_rem(dummy_divisor, LIBERA_DD_CIRCBUF_ATOMS, &return_value);
+        
+        return return_value;
 }
 
 
@@ -102,15 +102,15 @@ get_circ_offset_mt(libera_hw_time_t *mt)
 {
     struct libera_event_device  *event  = &libera_event;
     
-	uint64_t dummy_first_part, dummy_divisor ;
-	uint32_t return_value;
+        uint64_t dummy_first_part, dummy_divisor ;
+        uint32_t return_value;
 
-	dummy_first_part =  (event->settime.lmt.off + event->HB_start_lmt);
-	dummy_divisor = div_u64(dummy_first_part, lgbl.d);
+        dummy_first_part =  (event->settime.lmt.off + event->HB_start_lmt);
+        dummy_divisor = div_u64(dummy_first_part, lgbl.d);
 
-	(void)div_u64_rem((*mt - dummy_divisor),LIBERA_DD_CIRCBUF_ATOMS, &return_value);
+        (void)div_u64_rem((*mt - dummy_divisor),LIBERA_DD_CIRCBUF_ATOMS, &return_value);
 
-	return return_value;
+        return return_value;
 };
 
 
@@ -204,7 +204,7 @@ lmt2lst(const libera_hw_time_t *lmt,
    */
   if (deltaLMT >  DELTA_LMT_OVERFLOW)
     {
-	    PDEBUG2("deltaLMT has value 0x%08lx%08lx in function %s \n",ULL(deltaLMT),__FUNCTION__);
+            PDEBUG2("deltaLMT has value 0x%08lx%08lx in function %s \n",ULL(deltaLMT),__FUNCTION__);
       ASSERT(TRUE);
       return -ERANGE;
     }

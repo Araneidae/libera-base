@@ -272,9 +272,9 @@ typedef struct
 #endif
 
 #if defined BBFP
-#define DD_CB_ADDR_OVERFLOW_CNT		(0x20 + HB_OFFSET)
+#define DD_CB_ADDR_OVERFLOW_CNT         (0x20 + HB_OFFSET)
 #else
-#define DD_CB_FIFO_RESET		(0x20 + HB_OFFSET)
+#define DD_CB_FIFO_RESET                (0x20 + HB_OFFSET)
 #endif
 
 #define DD_CBH_FDEC_LSB      30
@@ -607,9 +607,9 @@ struct libera_pm_device
 
 
 struct sa_local {
-	struct mutex sem;
-	wait_queue_head_t wait;
-	struct libera_sa_fifo pipe;
+        struct mutex sem;
+        wait_queue_head_t wait;
+        struct libera_sa_fifo pipe;
 };
 
 struct libera_registered_pipes
@@ -642,16 +642,16 @@ struct libera_event_local
 typedef struct {
     unsigned int update;
     struct {
-	libera_hw_time_t ref;
-	libera_hw_time_t off;
+        libera_hw_time_t ref;
+        libera_hw_time_t off;
         libera_hw_time_t scphi;
     } lst;
     struct {
-	libera_hw_time_t ref;
+        libera_hw_time_t ref;
         libera_hw_time_t off_all;
-	libera_hw_time_t off;
-	libera_hw_time_t off_pll;
-	libera_hw_time_t mcphi;
+        libera_hw_time_t off;
+        libera_hw_time_t off_pll;
+        libera_hw_time_t mcphi;
     } lmt;
 } libera_settime_t;
 
@@ -750,9 +750,9 @@ extern struct libera_global lgbl;
 
 extern void
 libera_dma_command(
-	unsigned long source_addr,
-	void* target_addr,
-	unsigned long bytes);
+        unsigned long source_addr,
+        void* target_addr,
+        unsigned long bytes);
 
 
 extern int 
@@ -797,7 +797,7 @@ libera_readlBlock(const unsigned long *address, unsigned long *buf, size_t u32_s
     register size_t i;
     
     for (i=0; i < u32_size; i++)
-	*(buf+i) = readl(address+i);
+        *(buf+i) = readl(address+i);
 }
 
 /** U32-word block write.
@@ -814,7 +814,7 @@ libera_writelBlock(const unsigned long *address, unsigned long *buf, size_t u32_
     register size_t i;
     
     for (i=0; i < u32_size; i++)
-	writel(*(buf+i), address + i);
+        writel(*(buf+i), address + i);
 }
 
 
@@ -837,8 +837,8 @@ libera_delay_jiffies_interruptible(int delay_jiff)
     set_current_state(TASK_INTERRUPTIBLE);
     /*
     if (signal_pending(current)) {
-	set_current_state(TASK_RUNNING);
-	return -ERESTARTSYS;
+        set_current_state(TASK_RUNNING);
+        return -ERESTARTSYS;
     }
     */
     schedule_timeout(delay_jiff);
@@ -920,8 +920,8 @@ logged_readl(unsigned long c, unsigned long iobase)
 {
     unsigned int v = le32_to_cpu(__raw_readl(__mem_pci(c)));
     printk(LIBERA_SYSLOG_LEVEL "R(0x%lx) = 0x%lx\n", 
-	   (c - iobase + 0x14000000),
-	   (unsigned long)v);
+           (c - iobase + 0x14000000),
+           (unsigned long)v);
     return v;
 }
 

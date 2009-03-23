@@ -40,11 +40,11 @@ or visit http://www.gnu.org
 
 extern loff_t
 libera_dd_llseek_specific(struct file *file, 
-			  loff_t time, int whence);
+                          loff_t time, int whence);
 
 extern ssize_t 
 libera_dd_read_specific(struct file *file, char __user *buf, 
-			size_t count, loff_t *f_pos);
+                        size_t count, loff_t *f_pos);
 
 
 /** Libera DD Device: Called on open()
@@ -58,7 +58,7 @@ static int
 libera_dd_open(struct inode *inode, struct file *file)
 {
     struct libera_dd_device *dev =
-	(struct libera_dd_device *) file->private_data;
+        (struct libera_dd_device *) file->private_data;
     libera_dd_local_t *dd_local = NULL;
     
     if (!dev) return -ENODEV;
@@ -66,32 +66,32 @@ libera_dd_open(struct inode *inode, struct file *file)
     mutex_lock(&dev->sem);
     /* We do not allow writing */
     if (file->f_mode & FMODE_WRITE) {
-	mutex_unlock(&dev->sem);
-	return -EACCES;
+        mutex_unlock(&dev->sem);
+        return -EACCES;
     }
 
     dev->readers++;
 
     /* Get a fresh dd_local per file descriptor */ 
     dd_local = (libera_dd_local_t *)
-	kmalloc(sizeof(libera_dd_local_t), GFP_KERNEL);
+        kmalloc(sizeof(libera_dd_local_t), GFP_KERNEL);
     if (dd_local)
     {
-	/* No junk in dd_localk! */
-	memset(dd_local, 0, sizeof(libera_dd_local_t));
-	dd_local->dec = 1;
+        /* No junk in dd_localk! */
+        memset(dd_local, 0, sizeof(libera_dd_local_t));
+        dd_local->dec = 1;
     }
     else
     {
-	mutex_unlock(&dev->sem);
-	return -ENOMEM;
+        mutex_unlock(&dev->sem);
+        return -ENOMEM;
     }
     
     /* Store current dd_local for our reference */
     file->f_version = (unsigned long)dd_local;
 
     PDEBUG3("Opened libera.dd device: readers=%d, writers=%d\n",
-	    dev->readers, dev->writers);
+            dev->readers, dev->writers);
 
     dev->open_count++; /* internal counter */
     mutex_unlock(&dev->sem);
@@ -111,7 +111,7 @@ static int
 libera_dd_release(struct inode *inode, struct file *file)
 {
     struct libera_dd_device *dev =
-	(struct libera_dd_device *) file->private_data;
+        (struct libera_dd_device *) file->private_data;
     libera_dd_local_t *dd_local = (libera_dd_local_t *)file->f_version;
 
 
@@ -124,7 +124,7 @@ libera_dd_release(struct inode *inode, struct file *file)
 
 
     PDEBUG3("Closed libera.dd device: readers=%d, writers=%d\n",
-	    dev->readers, dev->writers);
+            dev->readers, dev->writers);
 
     return 0; /* success */
 }
@@ -166,10 +166,10 @@ libera_dd_read(struct file *file, char __user *buf, size_t count, loff_t *f_pos)
  */
 static int 
 libera_dd_ioctl(struct inode *inode, struct file *file,
-		 unsigned int cmd, unsigned long arg)
+                 unsigned int cmd, unsigned long arg)
 {
     struct libera_dd_device *dev =
-	(struct libera_dd_device *) file->private_data;
+        (struct libera_dd_device *) file->private_data;
     libera_dd_local_t *dd_local = (libera_dd_local_t *)file->f_version;
     
     int err = 0;
@@ -179,8 +179,8 @@ libera_dd_ioctl(struct inode *inode, struct file *file,
     if (_IOC_TYPE(cmd) != LIBERA_IOC_MAGIC) return -ENOTTY;
     if ((_IOC_NR(cmd) & LIBERA_IOC_MASK) != LIBERA_IOC_DD)
     {
-	ASSERT(TRUE);
-	return -ENOTTY;
+        ASSERT(TRUE);
+        return -ENOTTY;
     }
     
     if (_IOC_DIR(cmd) & _IOC_READ)
@@ -188,63 +188,63 @@ libera_dd_ioctl(struct inode *inode, struct file *file,
     else if (_IOC_DIR(cmd) & _IOC_WRITE)
         err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
     if (err) {
-	ASSERT(TRUE);
-	return -EFAULT;
+        ASSERT(TRUE);
+        return -EFAULT;
     }
     
     /* Lock the whole device */
     if (mutex_lock_interruptible(&dev->sem))
-	return -ERESTARTSYS;
+        return -ERESTARTSYS;
 
     switch(cmd)
     {
-	/* DEC: Decimation */
+        /* DEC: Decimation */
     case LIBERA_IOC_GET_DEC:
-	ret = copy_to_user((libera_U32_t *)arg,
-			   &dd_local->dec,
-			   sizeof(libera_U32_t));
-	break;
+        ret = copy_to_user((libera_U32_t *)arg,
+                           &dd_local->dec,
+                           sizeof(libera_U32_t));
+        break;
     case LIBERA_IOC_SET_DEC:
-	{
-	    libera_U32_t NewDec;
-	    ret = copy_from_user(&NewDec,
-				 (libera_U32_t *)arg,
-				 sizeof(libera_U32_t));
+        {
+            libera_U32_t NewDec;
+            ret = copy_from_user(&NewDec,
+                                 (libera_U32_t *)arg,
+                                 sizeof(libera_U32_t));
             PDEBUG2("New decimation = %d\n", NewDec);
-	    if (NewDec) 
-		dd_local->dec = NewDec;
-	    else
-		ret = -EINVAL;
-	}
-	/* NOTE: The new decimation will be effective after the next
-	 *       DD read() call.
-	 */
-	break;
+            if (NewDec) 
+                dd_local->dec = NewDec;
+            else
+                ret = -EINVAL;
+        }
+        /* NOTE: The new decimation will be effective after the next
+         *       DD read() call.
+         */
+        break;
 
-	/* DD_TSTAMP: PM data timestamp */
+        /* DD_TSTAMP: PM data timestamp */
     case LIBERA_IOC_GET_DD_TSTAMP:
-	ret = copy_to_user((libera_timestamp_t *)arg,
-			   &dd_local->tstamp,
-			   sizeof(libera_timestamp_t));
-	break;
-	
+        ret = copy_to_user((libera_timestamp_t *)arg,
+                           &dd_local->tstamp,
+                           sizeof(libera_timestamp_t));
+        break;
+        
     default:
-	/* NOTE: Returning -EINVAL for invalid argument would make more sense, 
-	 *       but acoording to POSIX -ENOTTY should be returned in 
-	 *       such cases.
-	 */
-	PDEBUG("DD: Invalid ioctl() argument (file: %s, line: %d)\n", 
-	       __FILE__, __LINE__);
-	return -ENOTTY;
+        /* NOTE: Returning -EINVAL for invalid argument would make more sense, 
+         *       but acoording to POSIX -ENOTTY should be returned in 
+         *       such cases.
+         */
+        PDEBUG("DD: Invalid ioctl() argument (file: %s, line: %d)\n", 
+               __FILE__, __LINE__);
+        return -ENOTTY;
 
     } /* switch(cmd) */
 
     mutex_unlock(&dev->sem);
     
     if (err) 
-	return err;
+        return err;
     else
-	return ret;
+        return ret;
 }
 
 
@@ -254,7 +254,7 @@ libera_dd_ioctl(struct inode *inode, struct file *file,
  */
 struct file_operations libera_dd_fops = {
     owner:          THIS_MODULE,
-    llseek:	    libera_dd_llseek,
+    llseek:         libera_dd_llseek,
     read:           libera_dd_read,
     ioctl:          libera_dd_ioctl,
     open:           libera_dd_open,

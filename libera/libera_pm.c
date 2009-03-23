@@ -46,15 +46,15 @@ static int
 libera_pm_open(struct inode *inode, struct file *file)
 {
     struct libera_pm_device *dev =
-	(struct libera_pm_device *) file->private_data;
+        (struct libera_pm_device *) file->private_data;
 
     if (!dev) return -ENODEV;
 
     mutex_lock(&dev->sem);
     /* We do not allow writing */
     if (file->f_mode & FMODE_WRITE) {
-	mutex_unlock(&dev->sem);
-	return -EACCES;
+        mutex_unlock(&dev->sem);
+        return -EACCES;
     }
 
     /* Is it the first open() for reading */
@@ -62,7 +62,7 @@ libera_pm_open(struct inode *inode, struct file *file)
     dev->readers++;
 
     PDEBUG2("Opened libera.pm device: readers=%d, writers=%d\n", 
-	   dev->readers, dev->writers);
+           dev->readers, dev->writers);
 
     dev->open_count++; /* internal counter */
     mutex_unlock(&dev->sem);
@@ -81,7 +81,7 @@ static int
 libera_pm_release(struct inode *inode, struct file *file)
 {
     struct libera_pm_device *dev =
-	(struct libera_pm_device *) file->private_data;
+        (struct libera_pm_device *) file->private_data;
 
 
     dev->open_count--; /* internal counter */
@@ -92,7 +92,7 @@ libera_pm_release(struct inode *inode, struct file *file)
     
 
     PDEBUG2("Closed libera.pm device: readers=%d, writers=%d\n", 
-	   dev->readers, dev->writers);
+           dev->readers, dev->writers);
 
     return 0; /* success */
 }
@@ -108,7 +108,7 @@ static ssize_t
 libera_pm_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
 {
     struct libera_pm_device *dev =
-    	(struct libera_pm_device *) file->private_data;
+        (struct libera_pm_device *) file->private_data;
     
     ssize_t ret = 0;
     unsigned span_atoms;
@@ -116,36 +116,36 @@ libera_pm_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
     
     /* Lock the whole device */
     if (mutex_lock_interruptible(&dev->sem))
-	return -ERESTARTSYS;
+        return -ERESTARTSYS;
     
     /* Sanity check regarding count */
     if(count > (pmsize*sizeof(libera_atom_dd_t))) {
-	PDEBUG("PM: read(): Parameter count too big.\n");
-	ret = -EINVAL;
-	goto out;
+        PDEBUG("PM: read(): Parameter count too big.\n");
+        ret = -EINVAL;
+        goto out;
     }
     
     /* Filter out strange, non-atomically-dividable values. */
     if (count % sizeof(libera_atom_dd_t)) {
-	PDEBUG("PM: read(): Inapropriate count size.\n");
-    	ret = -EINVAL;
-	goto out;
+        PDEBUG("PM: read(): Inapropriate count size.\n");
+        ret = -EINVAL;
+        goto out;
     }
     span_atoms = count/sizeof(libera_atom_dd_t);
      
     begin = dev->buf + (pmsize - span_atoms);
     if (copy_to_user(buf, begin, span_atoms*sizeof(libera_atom_dd_t))) {
         ret = -EFAULT;
-	goto out;
+        goto out;
     }
     else 
     {
-	buf += span_atoms*sizeof(libera_atom_dd_t);
-	ret += span_atoms*sizeof(libera_atom_dd_t);
+        buf += span_atoms*sizeof(libera_atom_dd_t);
+        ret += span_atoms*sizeof(libera_atom_dd_t);
     }
     
     PDEBUG2("PM (%p): Read %d atoms from begin %p\n",
-	    file, span_atoms, begin);
+            file, span_atoms, begin);
     
  out:
     mutex_unlock(&dev->sem);
@@ -162,10 +162,10 @@ libera_pm_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
  */
 static int 
 libera_pm_ioctl(struct inode *inode, struct file *file,
-		 unsigned int cmd, unsigned long arg)
+                 unsigned int cmd, unsigned long arg)
 {
     struct libera_pm_device *dev =
-	(struct libera_pm_device *) file->private_data;
+        (struct libera_pm_device *) file->private_data;
     
     int err = 0;
     int ret = 0;
@@ -174,8 +174,8 @@ libera_pm_ioctl(struct inode *inode, struct file *file,
     if (_IOC_TYPE(cmd) != LIBERA_IOC_MAGIC) return -ENOTTY;
     if ((_IOC_NR(cmd) & LIBERA_IOC_MASK) != LIBERA_IOC_PM)
     {
-	ASSERT(TRUE);
-	return -ENOTTY;
+        ASSERT(TRUE);
+        return -ENOTTY;
     }
     
     if (_IOC_DIR(cmd) & _IOC_READ)
@@ -183,49 +183,49 @@ libera_pm_ioctl(struct inode *inode, struct file *file,
     else if (_IOC_DIR(cmd) & _IOC_WRITE)
         err =  !access_ok(VERIFY_READ, (void *)arg, _IOC_SIZE(cmd));
     if (err) {
-	ASSERT(TRUE);
-	return -EFAULT;
+        ASSERT(TRUE);
+        return -EFAULT;
     }
     
     /* Is this a SET_ method? */
     if (_IOC_DIR(cmd) == _IOC_WRITE)
     {
-	/* File descriptor access control */
-	if (dev->master_filp != file)
-	    return -EPERM;
+        /* File descriptor access control */
+        if (dev->master_filp != file)
+            return -EPERM;
     }
 
 
     /* Lock the whole device */
     if (mutex_lock_interruptible(&dev->sem))
-	return -ERESTARTSYS;
+        return -ERESTARTSYS;
 
     switch(cmd)
     {
-	/* PM_TSTAMP: PM data timestamp */
-	case LIBERA_IOC_GET_PM_TSTAMP:
-	ret = copy_to_user((libera_timestamp_t *)arg,
-			   &dev->tstamp,
-			   sizeof(libera_timestamp_t));
-	break;
-	
+        /* PM_TSTAMP: PM data timestamp */
+        case LIBERA_IOC_GET_PM_TSTAMP:
+        ret = copy_to_user((libera_timestamp_t *)arg,
+                           &dev->tstamp,
+                           sizeof(libera_timestamp_t));
+        break;
+        
     default:
-	/* NOTE: Returning -EINVAL for invalid argument would make more sense, 
-	 *       but acoording to POSIX -ENOTTY should be returned in 
-	 *       such cases.
-	 */
-	PDEBUG("PM: Invalid ioctl() argument (file: %s, line: %d)\n", 
-	       __FILE__, __LINE__);
-	return -ENOTTY;
+        /* NOTE: Returning -EINVAL for invalid argument would make more sense, 
+         *       but acoording to POSIX -ENOTTY should be returned in 
+         *       such cases.
+         */
+        PDEBUG("PM: Invalid ioctl() argument (file: %s, line: %d)\n", 
+               __FILE__, __LINE__);
+        return -ENOTTY;
 
     } /* switch(cmd) */
 
     mutex_unlock(&dev->sem);
     
     if (err) 
-	return err;
+        return err;
     else
-	return ret;
+        return ret;
 }
 
 

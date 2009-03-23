@@ -29,7 +29,7 @@ or visit http://www.gnu.org
 
 int 
 libera_cfg_cmd(struct libera_cfg_device *dev,
-	       unsigned int cmd, unsigned long arg);
+               unsigned int cmd, unsigned long arg);
 
 
 #endif /* _LIBERA_CFG_H_ */
