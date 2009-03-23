@@ -914,9 +914,7 @@ unsigned int libera_event_poll(struct file *file, poll_table *wait)
  */
 struct file_operations libera_event_fops = {
     owner:          THIS_MODULE,
-    llseek:	    libera_llseek,      /* not specific, use default */
     read:           libera_event_read,
-    write:          libera_write,       /* not specific, use default */
     poll:           libera_event_poll,
     ioctl:          libera_event_ioctl,
     open:           libera_event_open,

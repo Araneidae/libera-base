@@ -235,9 +235,7 @@ libera_pm_ioctl(struct inode *inode, struct file *file,
  */
 struct file_operations libera_pm_fops = {
     owner:          THIS_MODULE,
-    llseek:	    libera_llseek,      /* not specific, use default */
     read:           libera_pm_read,
-    write:          libera_write,       /* not specific, use default */
     ioctl:          libera_pm_ioctl,
     open:           libera_pm_open,
     release:        libera_pm_release

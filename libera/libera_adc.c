@@ -231,8 +231,6 @@ struct file_operations libera_adc_fops = {
     owner:          THIS_MODULE,
     llseek:	    libera_adc_llseek,
     read:           libera_adc_read,
-    write:          libera_write,       /* not specific, use default */
-    ioctl:          libera_ioctl,       /* not specific, use default */
     open:           libera_adc_open,
     release:        libera_adc_release
 };

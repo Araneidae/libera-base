@@ -256,7 +256,6 @@ struct file_operations libera_dd_fops = {
     owner:          THIS_MODULE,
     llseek:	    libera_dd_llseek,
     read:           libera_dd_read,
-    write:          libera_write,       /* not specific, use default */
     ioctl:          libera_dd_ioctl,
     open:           libera_dd_open,
     release:        libera_dd_release

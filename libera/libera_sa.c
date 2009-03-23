@@ -340,10 +340,7 @@ out_nolock:
  */
 struct file_operations libera_sa_fops = {
 	owner:          THIS_MODULE,
-	llseek:	        libera_llseek,      /* not specific, use default */
 	read:           libera_sa_read,
-	write:          libera_write,       /* not specific, use default */
-	ioctl:          libera_ioctl,       /* not specific, use default */
 	open:           libera_sa_open,
 	release:        libera_sa_release
 };

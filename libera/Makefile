@@ -15,6 +15,7 @@ export ARCH = arm
 default:
 #	make -C $(O) M=$(CURDIR) ARCH=arm O=$(O) KBUILD_OUTPUT=$(O)
 	make -C $(KBUILD_OUTPUT) M=$(CURDIR)
+	cp libera.ko /home/libera/nfs/testing
 
 clean:
 	rm -f *.o *.ko .*.cmd *.mod.c *.symvers

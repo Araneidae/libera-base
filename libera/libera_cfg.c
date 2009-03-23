@@ -284,9 +284,6 @@ libera_cfg_ioctl(struct inode *inode, struct file *file,
  */
 struct file_operations libera_cfg_fops = {
     owner:          THIS_MODULE,
-    llseek:         libera_llseek,      /* not specific, use default */
-    read:           libera_read,        /* not specific, use default */
-    write:          libera_write,       /* not specific, use default */
     ioctl:          libera_cfg_ioctl,
     open:           libera_cfg_open,
     release:        libera_cfg_release

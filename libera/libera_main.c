@@ -31,17 +31,14 @@ or visit http://www.gnu.org
 #include <linux/interrupt.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
-#include <mach/system.h>
-#else
+
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <asm/arch-pxa/system.h>
+#include <asm/arch/system.h>
 #include <asm/irq.h>
 #include <asm/dma.h>
 #include <asm/io.h>
-#include <asm-arm/irq.h>
-#endif
+#include <asm/irq.h>
 
 #include "libera_kernel.h"
 #include "libera_event.h"
@@ -49,27 +46,27 @@ or visit http://www.gnu.org
 
 extern int
 getBlockedFromFIFO(struct libera_fifo* const q,
-		   wait_queue_head_t* const wq,
-		   libera_hw_time_t *time);
+                   wait_queue_head_t* const wq,
+                   libera_hw_time_t *time);
 extern int
 libera_sctrig_enable(struct libera_event_device * dev,
-		     const unsigned long mask);
+                     const unsigned long mask);
 extern int
 libera_mctrig_enable(struct libera_event_device * dev,
-		     const unsigned long mask);
+                     const unsigned long mask);
 extern int
 libera_init_specific(void);
 
 extern void
 libera_SCtrig_specific(struct libera_event_device *event,
-		       const libera_hw_time_t *stamp,
-		       const libera_hw_time_t *stamp_raw,
-		       unsigned long m, unsigned int i);
+                       const libera_hw_time_t *stamp,
+                       const libera_hw_time_t *stamp_raw,
+                       unsigned long m, unsigned int i);
 extern void
 libera_MCtrig_specific(struct libera_event_device *event,
-		       const libera_hw_time_t *stamp,
-		       const libera_hw_time_t *stamp_raw,
-		       unsigned long m, unsigned int i);
+                       const libera_hw_time_t *stamp,
+                       const libera_hw_time_t *stamp_raw,
+                       unsigned long m, unsigned int i);
 
 extern int
 libera_valid_trigger(struct libera_event_device *event,
@@ -166,7 +163,6 @@ unsigned long pmsize = LIBERA_PMSIZE_INITIAL;
 unsigned long atomsize = 0;
 
 /* Module properties and parameters */
-#if defined(MODULE)
 MODULE_AUTHOR("Ales Bardorfer, Instrumentation Technologies");
 MODULE_DESCRIPTION("Instrumentation Technologies Libera driver");
 MODULE_LICENSE("GPL");
@@ -188,7 +184,7 @@ module_param(pmsize, long, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC (pmsize, "Post-Mortem buffer size");
 module_param(atomsize, ulong, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC (atomsize, "Logical atom size (in samples)");
-#endif
+
 
 
 /* Set up interrupt handler tasklets */
@@ -218,7 +214,7 @@ libera_send_event(int id, int param)
     if ( ! (id & lgbl.event_mask) ) {
         PDEBUG3("Event blocked: id=0x%x param=0x%x mask=0x%x\n",
                 id, param, lgbl.event_mask);
-	return -EINVAL;
+        return -EINVAL;
     }
 
     le.id = id;
@@ -227,7 +223,7 @@ libera_send_event(int id, int param)
     PDEBUG3("Sending event: id=0x%x param=0x%x mask=0x%x\n",
             id, param, lgbl.event_mask);
     if (putTo_eventFIFO(& event->events, &le) < 0 )
-	printk(KERN_CRIT "libera: EVENT FIFO overflow.\n");
+        printk(KERN_CRIT "libera: EVENT FIFO overflow.\n");
 
     wake_up_interruptible(&event->EVENT_queue);
 
@@ -272,15 +268,15 @@ libera_get_CTIME(libera_Ltimestamp_t* const ctime)
      *       spinlocks, because we go to sleep later on.
      */
     if (mutex_lock_interruptible(&event->CTIME_sem))
-	return -ERESTARTSYS;
+        return -ERESTARTSYS;
 
     PDEBUG3("CTIME: Before SoftTrig iVec=0x%x, iMask=0x%lx\n",
-	    readl(iobase + SBC_IRQ), (unsigned long)get_irqMask());
+            readl(iobase + SBC_IRQ), (unsigned long)get_irqMask());
     /* Software trigger, SC module */
     writel(TRIGGER_BIT(T_TRIG_CTIME), iobase + T_SC_EVENTGEN);
 
     PDEBUG3("CTIME: After  SoftTrig iVec=0x%x, iMask=0x%lx\n",
-	    readl(iobase + SBC_IRQ), (unsigned long)get_irqMask());
+            readl(iobase + SBC_IRQ), (unsigned long)get_irqMask());
 
     /* Wait for CTIME MC interrupt.
      * NOTE: MC-fifo will always fill after SC-fifo. If we reverse
@@ -290,15 +286,15 @@ libera_get_CTIME(libera_Ltimestamp_t* const ctime)
      */
     PDEBUG3("Waiting for CTIME trigger.\n");
     ret = getBlockedFromFIFO(&event->mc_timestamps[T_TRIG_CTIME],
-			     &event->MC_queue,
-			     &ctime->lmt);
+                             &event->MC_queue,
+                             &ctime->lmt);
     if (ret) goto out;
     /* OK, we were awoken by the interrupt handler (after MC).
      * SC should be in SC-fifo, so read it (non-blocking).
      */
     if (! (data = getFromFIFO(&event->sc_timestamps[T_TRIG_CTIME])) ) {
-	ret = -EFAULT;
-	goto out;
+        ret = -EFAULT;
+        goto out;
     }
     ctime->lst = *data;
 
@@ -312,10 +308,10 @@ libera_get_CTIME(libera_Ltimestamp_t* const ctime)
 /** DEBUG helper function */
 static inline void
 putToGlitchCB(glitch_CB_t* const q,
-	      const libera_hw_time_t *stamp,
-	      unsigned long  th,
-	      unsigned long  tl,
-	      unsigned long jiff_time)
+              const libera_hw_time_t *stamp,
+              unsigned long  th,
+              unsigned long  tl,
+              unsigned long jiff_time)
 {
     q->gt[q->put].stamp = *stamp;
     q->gt[q->put].th = th;
@@ -342,13 +338,13 @@ getFromGlitchCB(glitch_CB_t* const q, int history)
 /** Glitch Timing logging based on jiffies difference */
 static inline void
 gt_log_jiff(char* const name,
-	    glitch_CB_t* const q,
-	    const libera_hw_time_t *stamp,
-	    unsigned long  th,
-	    unsigned long  tl,
-	    unsigned long jiff_time,
-	    unsigned int jiff_low,
-	    unsigned int jiff_high)
+            glitch_CB_t* const q,
+            const libera_hw_time_t *stamp,
+            unsigned long  th,
+            unsigned long  tl,
+            unsigned long jiff_time,
+            unsigned int jiff_low,
+            unsigned int jiff_high)
 {
     glitch_times_t *gt[GLITCH_LOG_MAX];
     long gt_diff;
@@ -359,36 +355,36 @@ gt_log_jiff(char* const name,
     gt[1] = getFromGlitchCB(q, 1);
     gt_diff = gt[0]->jiff_time - gt[1]->jiff_time;
     if ((gt_diff < jiff_low) ||
-	(gt_diff > jiff_high))
+        (gt_diff > jiff_high))
     {
-	for (i=2; i< GLITCH_LOG_MAX; i++)
-	    gt[i] = getFromGlitchCB(q, i);
+        for (i=2; i< GLITCH_LOG_MAX; i++)
+            gt[i] = getFromGlitchCB(q, i);
 
-	PDEBUG2("GLITCH: %s:\n", name);
-	for (i=0; i< GLITCH_LOG_MAX; i++) {
-	    PDEBUG2("(N-%u): 0x%08lx 0x%08lx  0x%08lx%08lx  0x%08lx%08lx  %lu  %lu\n",
-		   i,
-		   ((gt[i]->th & GET_MASK) >> GET_SHIFT),
-		   ((gt[i]->th & PUT_MASK) >> PUT_SHIFT),
-		   gt[i]->th,
-		   gt[i]->tl,
-		   ULL(gt[i]->stamp),
-		   gt[i]->jiff_time,
-		   T_FIFO_SIZE(gt[i]->tl));
-	}
+        PDEBUG2("GLITCH: %s:\n", name);
+        for (i=0; i< GLITCH_LOG_MAX; i++) {
+            PDEBUG2("(N-%u): 0x%08lx 0x%08lx  0x%08lx%08lx  0x%08lx%08lx  %lu  %lu\n",
+                   i,
+                   ((gt[i]->th & GET_MASK) >> GET_SHIFT),
+                   ((gt[i]->th & PUT_MASK) >> PUT_SHIFT),
+                   gt[i]->th,
+                   gt[i]->tl,
+                   ULL(gt[i]->stamp),
+                   gt[i]->jiff_time,
+                   T_FIFO_SIZE(gt[i]->tl));
+        }
     }
 }
 
 /** Glitch Timing logging based on timestamp difference */
 static inline void
 gt_log_stamp(char* const name,
-	     glitch_CB_t* const q,
-	     const libera_hw_time_t *stamp,
-	     unsigned long  th,
-	     unsigned long  tl,
-	     unsigned long jiff_time,
-	     long long stamp_low,
-	     long long stamp_high)
+             glitch_CB_t* const q,
+             const libera_hw_time_t *stamp,
+             unsigned long  th,
+             unsigned long  tl,
+             unsigned long jiff_time,
+             long long stamp_low,
+             long long stamp_high)
 {
     glitch_times_t *gt[GLITCH_LOG_MAX];
     long long lgt_diff;
@@ -399,23 +395,23 @@ gt_log_stamp(char* const name,
     gt[1] = getFromGlitchCB(q, 1);
     lgt_diff = gt[0]->stamp - gt[1]->stamp;
     if ((lgt_diff < stamp_low) ||
-	(lgt_diff > stamp_high))
+        (lgt_diff > stamp_high))
     {
-	for (i=2; i< GLITCH_LOG_MAX; i++)
-	    gt[i] = getFromGlitchCB(q, i);
+        for (i=2; i< GLITCH_LOG_MAX; i++)
+            gt[i] = getFromGlitchCB(q, i);
 
-	PDEBUG2("GLITCH: %s:\n", name);
-	for (i=0; i< GLITCH_LOG_MAX; i++) {
-	    PDEBUG2("(N-%u): 0x%08lx 0x%08lx  0x%08lx%08lx  0x%08lx%08lx  %lu  %lu\n",
-		   i,
-		   ((gt[i]->th & GET_MASK) >> GET_SHIFT),
-		   ((gt[i]->th & PUT_MASK) >> PUT_SHIFT),
-		   gt[i]->th,
-		   gt[i]->tl,
-		   ULL(gt[i]->stamp),
-		   gt[i]->jiff_time,
-		   T_FIFO_SIZE(gt[i]->tl));
-	}
+        PDEBUG2("GLITCH: %s:\n", name);
+        for (i=0; i< GLITCH_LOG_MAX; i++) {
+            PDEBUG2("(N-%u): 0x%08lx 0x%08lx  0x%08lx%08lx  0x%08lx%08lx  %lu  %lu\n",
+                   i,
+                   ((gt[i]->th & GET_MASK) >> GET_SHIFT),
+                   ((gt[i]->th & PUT_MASK) >> PUT_SHIFT),
+                   gt[i]->th,
+                   gt[i]->tl,
+                   ULL(gt[i]->stamp),
+                   gt[i]->jiff_time,
+                   T_FIFO_SIZE(gt[i]->tl));
+        }
     }
 }
 
@@ -425,13 +421,13 @@ static inline void
 libera_set_LST(struct libera_event_device *event)
 {
     libera_Ltimestamp_t *trig =
-	getFromCircBuf(&event->paired_timestamps[T_TRIG_TRIGGER]);
+        getFromCircBuf(&event->paired_timestamps[T_TRIG_TRIGGER]);
 
     PDEBUG2("libera_set_LST:\n");
     PDEBUG2("  LST_ref           = 0x%08lx%08lx\n",
-	    ULL(event->settime.lst.ref));
+            ULL(event->settime.lst.ref));
     PDEBUG2("  LST_trig_raw      = 0x%08lx%08lx\n",
-	    ULL(trig->lst));
+            ULL(trig->lst));
 
     /* Global LST offset */
     event->settime.lst.off = event->settime.lst.ref -
@@ -439,9 +435,9 @@ libera_set_LST(struct libera_event_device *event)
 
     /* DEBUG report */
     PDEBUG2("  SCPHI Offset      = 0x%08lx%08lx\n",
-	    ULL(event->settime.lst.scphi));
+            ULL(event->settime.lst.scphi));
     PDEBUG2("  Global LST Offset = 0x%08lx%08lx\n",
-	    ULL(event->settime.lst.off));
+            ULL(event->settime.lst.off));
 }
 
 
@@ -450,7 +446,7 @@ static inline void
 libera_set_LMT(struct libera_event_device *event)
 {
     libera_Ltimestamp_t *trig =
-	getFromCircBuf(&event->paired_timestamps[T_TRIG_TRIGGER]);
+        getFromCircBuf(&event->paired_timestamps[T_TRIG_TRIGGER]);
     
     libera_hw_time_t off_pll_old = event->settime.lmt.off_pll;
 
@@ -458,9 +454,9 @@ libera_set_LMT(struct libera_event_device *event)
 
     PDEBUG2("libera_set_LMT:\n");
     PDEBUG2("  LMT_ref           = 0x%08lx%08lx\n",
-	    ULL(event->settime.lmt.ref));
+            ULL(event->settime.lmt.ref));
     PDEBUG2("  LMT_trig_raw      = 0x%08lx%08lx\n",
-	    ULL(trig->lmt));
+            ULL(trig->lmt));
 
     /* Global LMT offset */
     event->settime.lmt.off_all = event->settime.lmt.ref -
@@ -478,18 +474,18 @@ libera_set_LMT(struct libera_event_device *event)
       event->settime.lmt.off_pll = 0;
     
     event->settime.lmt.off =
-	event->settime.lmt.off_all -
-	event->settime.lmt.off_pll;
+        event->settime.lmt.off_all -
+        event->settime.lmt.off_pll;
 
     /* DEBUG report */
     PDEBUG2("  MCPHI Offset      = 0x%08lx%08lx\n",
-	    ULL(event->settime.lmt.mcphi));
+            ULL(event->settime.lmt.mcphi));
     PDEBUG2("  Global LMT Offset = 0x%08lx%08lx\n",
-	    ULL(event->settime.lmt.off_all));
+            ULL(event->settime.lmt.off_all));
     PDEBUG2("  Driver LMT Offset = 0x%08lx%08lx\n",
-	    ULL(event->settime.lmt.off));
+            ULL(event->settime.lmt.off));
     PDEBUG2("  PLL LMT Offset    = 0x%08lx%08lx\n",
-	    ULL(event->settime.lmt.off_pll));
+            ULL(event->settime.lmt.off_pll));
 
     /* SA sync - stop & schedule appropriate start */
     writel(SA_STOP, iobase + SA_CONTROL);
@@ -505,9 +501,9 @@ static inline void
 libera_set_time(struct libera_event_device *event)
 {
     if (event->settime.update & LIBERA_SETTIME_ST)
-	libera_set_LST(event);
+        libera_set_LST(event);
     if (event->settime.update & LIBERA_SETTIME_MT)
-	libera_set_LMT(event);
+        libera_set_LMT(event);
 
     event->settime.update = 0;
 }
@@ -541,17 +537,17 @@ libera_sc_handler(void)
 
       if ( tl & SELF_INC_TRIGGER )
       {
-	  event->sc_time += 0x4000000ULL;
-	  PDEBUG3("SC: SELF_INC: 0x%08lx%08lx, stamp26= 0x%08lx%08lx\n",
-		  ULL(event->sc_time), ULL(stamp));
-	  DEBUG3_ONLY(gt_log_jiff("SC_SELF_INC",
-				 &event->sc_self_inc,
-				 &event->sc_time,
-				 th, tl,
-				 jiffies,
-				 GT_SC_JIFF_LOW,
-				 GT_SC_JIFF_HIGH);
-		     );
+          event->sc_time += 0x4000000ULL;
+          PDEBUG3("SC: SELF_INC: 0x%08lx%08lx, stamp26= 0x%08lx%08lx\n",
+                  ULL(event->sc_time), ULL(stamp));
+          DEBUG3_ONLY(gt_log_jiff("SC_SELF_INC",
+                                 &event->sc_self_inc,
+                                 &event->sc_time,
+                                 th, tl,
+                                 jiffies,
+                                 GT_SC_JIFF_LOW,
+                                 GT_SC_JIFF_HIGH);
+                     );
 
           libera_sc_selfinc_specific(event);
       }
@@ -566,61 +562,61 @@ libera_sc_handler(void)
       /* Fill all FIFOs from FPGA timing module SC */
       while ( tl & TRIG_VECTOR )
       {
-	while (!(tl & m) )
-	{
-	  i++; m <<= 1;
-	}
-	tl &= ~m; //clear current vector bit
-	PDEBUG3("SC_trig%u: 0x%08lx%08lx  %lu  %lu\n",
-		i,
-		ULL(stamp),
-		jiffies,
-		T_FIFO_SIZE(tl));
+        while (!(tl & m) )
+        {
+          i++; m <<= 1;
+        }
+        tl &= ~m; //clear current vector bit
+        PDEBUG3("SC_trig%u: 0x%08lx%08lx  %lu  %lu\n",
+                i,
+                ULL(stamp),
+                jiffies,
+                T_FIFO_SIZE(tl));
 
-	DEBUG3_ONLY(if (i == 10) {
-	               gt_log_stamp("SC_TRIG10",
-		       &event->sc_trig10,
-		       &stamp_raw,
-		       th, tl,
-		       jiffies,
-		       GT_SC_TRIG10_LOW,
-		       GT_SC_TRIG10_HIGH);
-	});
+        DEBUG3_ONLY(if (i == 10) {
+                       gt_log_stamp("SC_TRIG10",
+                       &event->sc_trig10,
+                       &stamp_raw,
+                       th, tl,
+                       jiffies,
+                       GT_SC_TRIG10_LOW,
+                       GT_SC_TRIG10_HIGH);
+        });
 
-	switch(i)
-	{
-	case T_TRIG_TRIGGER:
-	    if (cfg->param[LIBERA_CFG_TRIGMODE] == LIBERA_TRIGMODE_SET) {
-	        /* Read the first half of atom
-		 * Use stamp_raw for SET trigger!
-		 */
-	      putLSTtoCircBuf(&event->paired_timestamps[i], &stamp_raw);
-	      PDEBUG2("SET TRIGGER: LST_raw = 0x%08lx%08lx, j = %lu\n",
-		      ULL(stamp_raw), jiffies);
-	    } else {
-	        /* Read the first half of atom
-		 * Use stamp with offset for GET trigger!
-		 */
-	        putLSTtoCircBuf(&event->paired_timestamps[i], &stamp);
-		PDEBUG2("GET TRIGGER: LST = 0x%08lx%08lx, j = %lu\n",
-			ULL(stamp), jiffies);
-	    }
-	    break;
+        switch(i)
+        {
+        case T_TRIG_TRIGGER:
+            if (cfg->param[LIBERA_CFG_TRIGMODE] == LIBERA_TRIGMODE_SET) {
+                /* Read the first half of atom
+                 * Use stamp_raw for SET trigger!
+                 */
+              putLSTtoCircBuf(&event->paired_timestamps[i], &stamp_raw);
+              PDEBUG2("SET TRIGGER: LST_raw = 0x%08lx%08lx, j = %lu\n",
+                      ULL(stamp_raw), jiffies);
+            } else {
+                /* Read the first half of atom
+                 * Use stamp with offset for GET trigger!
+                 */
+                putLSTtoCircBuf(&event->paired_timestamps[i], &stamp);
+                PDEBUG2("GET TRIGGER: LST = 0x%08lx%08lx, j = %lu\n",
+                        ULL(stamp), jiffies);
+            }
+            break;
 
-	    /* Handle specific triggers */
-	default:
-	    libera_SCtrig_specific(event, &stamp, &stamp_raw, m, i);
-	} // switch
+            /* Handle specific triggers */
+        default:
+            libera_SCtrig_specific(event, &stamp, &stamp_raw, m, i);
+        } // switch
       } // while ( th & TRIG_VECTOR )
 
       /* Deadlock avoidance */
       DEBUG2_ONLY(
           if (count++ > 512){
-	    PDEBUG2("SC: DEADLOCK AVOIDED (file: %s, line: %d) ",
-		    __FILE__, __LINE__);
-	    PDEBUG2("T_FIFO_SIZE(tl) = %lu\n", T_FIFO_SIZE(tl));
-	    return;
-	  });
+            PDEBUG2("SC: DEADLOCK AVOIDED (file: %s, line: %d) ",
+                    __FILE__, __LINE__);
+            PDEBUG2("T_FIFO_SIZE(tl) = %lu\n", T_FIFO_SIZE(tl));
+            return;
+          });
 
       /* Reinit */
       i = 0; m = TRIG_ZERO;
@@ -667,19 +663,19 @@ libera_mc_handler(void)
       ((unsigned long *) p)[1] = 0;
       if ( tl & SELF_INC_TRIGGER )
       {
-	  DEBUG_ONLY(static unsigned long count; count++;);
+          DEBUG_ONLY(static unsigned long count; count++;);
 
-	  event->mc_time += 0x4000000ULL;
-	  PDEBUG3("MC: SELF_INC: 0x%08lx%08lx, stamp26= 0x%08lx%08lx\n",
-		  ULL(event->mc_time), ULL(stamp));
-	  DEBUG3_ONLY(gt_log_jiff("MC_SELF_INC",
-				 &event->mc_self_inc,
-				 &event->mc_time,
-				 th, tl,
-				 jiffies,
-				 GT_MC_JIFF_LOW,
-				 GT_MC_JIFF_HIGH);
-		     );
+          event->mc_time += 0x4000000ULL;
+          PDEBUG3("MC: SELF_INC: 0x%08lx%08lx, stamp26= 0x%08lx%08lx\n",
+                  ULL(event->mc_time), ULL(stamp));
+          DEBUG3_ONLY(gt_log_jiff("MC_SELF_INC",
+                                 &event->mc_self_inc,
+                                 &event->mc_time,
+                                 th, tl,
+                                 jiffies,
+                                 GT_MC_JIFF_LOW,
+                                 GT_MC_JIFF_HIGH);
+                     );
 
           libera_mc_selfinc_specific(event);
       }
@@ -694,77 +690,77 @@ libera_mc_handler(void)
       /* Fill all FIFOs from FPGA timing module MC */
       while ( tl & TRIG_VECTOR )
       {
-	while (!(tl & m) )
-	{
-	  i++; m <<= 1;
-	}
-	tl &= ~m; //clear current vector bit
-	PDEBUG3("MC_trig%u: 0x%08lx%08lx  %lu  %lu\n",
-		i,
-		ULL(stamp),
-		jiffies,
-		T_FIFO_SIZE(tl));
+        while (!(tl & m) )
+        {
+          i++; m <<= 1;
+        }
+        tl &= ~m; //clear current vector bit
+        PDEBUG3("MC_trig%u: 0x%08lx%08lx  %lu  %lu\n",
+                i,
+                ULL(stamp),
+                jiffies,
+                T_FIFO_SIZE(tl));
 
-	DEBUG3_ONLY(if (i == 10) {
-	  gt_log_stamp("MC_TRIG10",
-		       &event->mc_trig10,
-		       &stamp_raw,
-		       th, tl,
-		       jiffies,
-		       GT_MC_TRIG10_LOW,
-		       GT_MC_TRIG10_HIGH);
-	});
+        DEBUG3_ONLY(if (i == 10) {
+          gt_log_stamp("MC_TRIG10",
+                       &event->mc_trig10,
+                       &stamp_raw,
+                       th, tl,
+                       jiffies,
+                       GT_MC_TRIG10_LOW,
+                       GT_MC_TRIG10_HIGH);
+        });
 
-	switch(i)
-	{
-	case T_TRIG_TRIGGER:
-	    trigmode = cfg->param[LIBERA_CFG_TRIGMODE];
-	    if (trigmode == LIBERA_TRIGMODE_SET) {
-	        /* Read the second half of atom & increment CircBuf pointer
-		 * Use stamp_raw for SET trigger!
-		 */
-	        putLMTtoCircBuf(&event->paired_timestamps[i], &stamp_raw);
-		PDEBUG2("SET TRIGGER: LMT_raw = 0x%08lx%08lx, j = %lu\n",
-			ULL(stamp_raw), jiffies);
+        switch(i)
+        {
+        case T_TRIG_TRIGGER:
+            trigmode = cfg->param[LIBERA_CFG_TRIGMODE];
+            if (trigmode == LIBERA_TRIGMODE_SET) {
+                /* Read the second half of atom & increment CircBuf pointer
+                 * Use stamp_raw for SET trigger!
+                 */
+                putLMTtoCircBuf(&event->paired_timestamps[i], &stamp_raw);
+                PDEBUG2("SET TRIGGER: LMT_raw = 0x%08lx%08lx, j = %lu\n",
+                        ULL(stamp_raw), jiffies);
 
-		/* SET time */
-		libera_set_time(event);
-		/* NOTE: If there were more than 2 trigmodes, we would have
-		 *       to set it to the previous/last mode.
-		 *       Since there are only two of them, we know it's
-		 *       a GET after the SET.
-		 */
-		cfg->param[LIBERA_CFG_TRIGMODE] = LIBERA_TRIGMODE_GET;
-	    } else {
-	        /* Read the second half of atom & increment CircBuf pointer
-		 * Use stamp with offset for GET trigger!
-		 */
+                /* SET time */
+                libera_set_time(event);
+                /* NOTE: If there were more than 2 trigmodes, we would have
+                 *       to set it to the previous/last mode.
+                 *       Since there are only two of them, we know it's
+                 *       a GET after the SET.
+                 */
+                cfg->param[LIBERA_CFG_TRIGMODE] = LIBERA_TRIGMODE_GET;
+            } else {
+                /* Read the second half of atom & increment CircBuf pointer
+                 * Use stamp with offset for GET trigger!
+                 */
                 if (!libera_valid_trigger(event,i)) break;
-	        putLMTtoCircBuf(&event->paired_timestamps[i], &stamp);
-		PDEBUG2("GET TRIGGER: LMT = 0x%08lx%08lx, j = %lu\n",
+                putLMTtoCircBuf(&event->paired_timestamps[i], &stamp);
+                PDEBUG2("GET TRIGGER: LMT = 0x%08lx%08lx, j = %lu\n",
                         ULL(stamp), jiffies);
-	    }
-	    /* Notify userland about TRIGGER trigger event  */
-	    if ( trigmode == LIBERA_TRIGMODE_GET )
-		libera_send_event(LIBERA_EVENT_TRIGGET, 0);
-	    else if ( trigmode == LIBERA_TRIGMODE_SET )
-		libera_send_event(LIBERA_EVENT_TRIGSET, 0);
-	    break;
+            }
+            /* Notify userland about TRIGGER trigger event  */
+            if ( trigmode == LIBERA_TRIGMODE_GET )
+                libera_send_event(LIBERA_EVENT_TRIGGET, 0);
+            else if ( trigmode == LIBERA_TRIGMODE_SET )
+                libera_send_event(LIBERA_EVENT_TRIGSET, 0);
+            break;
 
-	default:
-	    /* All the other triggers */
-	    libera_MCtrig_specific(event, &stamp, &stamp_raw, m, i);
-	} // switch(i)
+        default:
+            /* All the other triggers */
+            libera_MCtrig_specific(event, &stamp, &stamp_raw, m, i);
+        } // switch(i)
       } // while ( th & TRIG_VECTOR )
 
       /* Deadlock avoidance */
       DEBUG2_ONLY(
           if (count++ > 512){
-	      PDEBUG2("MC: DEADLOCK AVOIDED (file: %s, line: %d) ",
-		      __FILE__, __LINE__);
-	      PDEBUG2("T_FIFO_SIZE(tl) = %lu\n", T_FIFO_SIZE(tl));
-	      return;
-	  });
+              PDEBUG2("MC: DEADLOCK AVOIDED (file: %s, line: %d) ",
+                      __FILE__, __LINE__);
+              PDEBUG2("T_FIFO_SIZE(tl) = %lu\n", T_FIFO_SIZE(tl));
+              return;
+          });
 
       /* Reinit */
       i = 0; m = TRIG_ZERO;
@@ -792,7 +788,7 @@ libera_schelp_handler(void)
     struct libera_event_device  *event  = &libera_event;
 
     PDEBUG3("SC helper, event->sc_time = 0x%08lx%08lx, j = %lu\n",
-	    ULL(event->sc_time), jiffies);
+            ULL(event->sc_time), jiffies);
 
     /* Common part */
 
@@ -809,7 +805,7 @@ libera_mchelp_handler(void)
     struct libera_event_device  *event  = &libera_event;
 
     PDEBUG3("MC helper, event->mc_time = 0x%08lx%08lx, j = %lu\n",
-	    ULL(event->mc_time), jiffies);
+            ULL(event->mc_time), jiffies);
 
     /* Common part */
 
@@ -831,11 +827,11 @@ libera_scmchelp_handler(void)
     PDEBUG3("Heper IRQ: int_status = 0x%08lx\n", int_status);
 
     if (int_status & (1<<0)) {
-	libera_schelp_handler();
+        libera_schelp_handler();
     }
 
     if (int_status & (1<<8)) {
-	libera_mchelp_handler();
+        libera_mchelp_handler();
     }
 
 }
@@ -908,7 +904,7 @@ libera_dd_handler(void)
 
     /* Wake up the OB-fifo reading section */
     if (putToFIFO(&dd->dd_irqevents, 0) < 0)
-	printk(KERN_CRIT "libera: DD irq: FIFO overflow.\n");
+        printk(KERN_CRIT "libera: DD irq: FIFO overflow.\n");
     PDEBUG3("DD irq: Waking up OB-fifo section...\n");
     wake_up_interruptible(&dd->DD_queue);
 }
@@ -972,66 +968,66 @@ libera_interrupt(int irq, void *dev_id)
      */
     while( (int_vec = (readl(iobase + SBC_IRQ) & get_irqMask())) )
     {
-	/* NOTE: It is vital for the atomicity of CTIME LMT & LST
-	 *       capturing, that SC handler is called before MC handler.
-	 */
+        /* NOTE: It is vital for the atomicity of CTIME LMT & LST
+         *       capturing, that SC handler is called before MC handler.
+         */
 
-	PDEBUG3("In IntWhile loop, (iVec & iMask)=0x%x\n", int_vec);
-	/* 0th priority interrupt */
-	if (int_vec & LIBERA_INTERRUPT_ILK_MASK)
-	{
-	    PDEBUG3("Calling ILK int. handler.\n");
-	    libera_ilk_handler();
-	}
+        PDEBUG3("In IntWhile loop, (iVec & iMask)=0x%x\n", int_vec);
+        /* 0th priority interrupt */
+        if (int_vec & LIBERA_INTERRUPT_ILK_MASK)
+        {
+            PDEBUG3("Calling ILK int. handler.\n");
+            libera_ilk_handler();
+        }
 
-	/* 1st priority interrupt */
-	if (int_vec & LIBERA_INTERRUPT_SC_MASK)
-	{
-	    PDEBUG3("Calling SC int. handler.\n");
-	    libera_sc_handler();
-	}
+        /* 1st priority interrupt */
+        if (int_vec & LIBERA_INTERRUPT_SC_MASK)
+        {
+            PDEBUG3("Calling SC int. handler.\n");
+            libera_sc_handler();
+        }
 
-	/* 2nd priority interrupt */
-	if (int_vec & LIBERA_INTERRUPT_MC_MASK)
-	{
-	    PDEBUG3("Calling MC int. handler.\n");
-	    libera_mc_handler();
-	}
+        /* 2nd priority interrupt */
+        if (int_vec & LIBERA_INTERRUPT_MC_MASK)
+        {
+            PDEBUG3("Calling MC int. handler.\n");
+            libera_mc_handler();
+        }
 
-	/* 3rd & 4th priority interrupt */
-	if (int_vec & (LIBERA_INTERRUPT_HELPSC_MASK |
-		       LIBERA_INTERRUPT_HELPMC_MASK))
-	{
-	    PDEBUG3("Calling SCMC helper handler.\n");
-	    libera_scmchelp_handler();
-	}
+        /* 3rd & 4th priority interrupt */
+        if (int_vec & (LIBERA_INTERRUPT_HELPSC_MASK |
+                       LIBERA_INTERRUPT_HELPMC_MASK))
+        {
+            PDEBUG3("Calling SCMC helper handler.\n");
+            libera_scmchelp_handler();
+        }
 
-	/* 5th priority interrupt */
-	if (int_vec & LIBERA_INTERRUPT_DD_MASK)
-	{
-	    PDEBUG3("Calling DD int. handler.\n");
-	    libera_dd_handler();
-	}
+        /* 5th priority interrupt */
+        if (int_vec & LIBERA_INTERRUPT_DD_MASK)
+        {
+            PDEBUG3("Calling DD int. handler.\n");
+            libera_dd_handler();
+        }
 
-	/* 6th priority interrupt */
-	if (int_vec & LIBERA_INTERRUPT_SA_MASK)
-	{
-	    PDEBUG3("Calling SA int. handler.\n");
-	    libera_sa_handler();
-	}
+        /* 6th priority interrupt */
+        if (int_vec & LIBERA_INTERRUPT_SA_MASK)
+        {
+            PDEBUG3("Calling SA int. handler.\n");
+            libera_sa_handler();
+        }
 
-	/* Deadlock avoidance */
-	DEBUG2_ONLY(
-	    if (count++ > 256){
-		PDEBUG2("INTERRUPT DEADLOCK AVOIDED (file: %s, line: %d)\n ",
-			__FILE__, __LINE__);
-		PDEBUG2("Further interrupts disabled due to unhandled int. iVec=0x%x int_vec=0x%x\n", readl(iobase + SBC_IRQ), int_vec);
-		return IRQ_NONE;
-	    });
+        /* Deadlock avoidance */
+        DEBUG2_ONLY(
+            if (count++ > 256){
+                PDEBUG2("INTERRUPT DEADLOCK AVOIDED (file: %s, line: %d)\n ",
+                        __FILE__, __LINE__);
+                PDEBUG2("Further interrupts disabled due to unhandled int. iVec=0x%x int_vec=0x%x\n", readl(iobase + SBC_IRQ), int_vec);
+                return IRQ_NONE;
+            });
     } /* while(int_vec) */
 
     PDEBUG3("LEAVING INT. HANDLER, (iVec & iMask)=0x%x\n",
-	   readl(iobase + SBC_IRQ) & get_irqMask());
+           readl(iobase + SBC_IRQ) & get_irqMask());
     spin_unlock_irqrestore(&libera_irq_spinlock, flags);
 
     return IRQ_HANDLED;
@@ -1051,17 +1047,17 @@ libera_dma_command(unsigned long source_addr,
             target_addr,
             virt_to_bus(target_addr),
             bytes,
-	    (bytes/sizeof(libera_atom_dd_t)));
+            (bytes/sizeof(libera_atom_dd_t)));
     DCSR(dma->chan) |= DCSR_NODESC;
     DCSR(dma->chan) &= ~DCSR_RUN;
     DSADR(dma->chan) = source_addr; //virt_to_bus(source_addr);
     DTADR(dma->chan) = virt_to_phys(target_addr);
     DCMD(dma->chan) = 0;
     DCMD(dma->chan) |= (DCMD_INCTRGADDR | DCMD_INCSRCADDR |
-			DCMD_ENDIRQEN |
-			DCMD_BURST32 |
-			DCMD_WIDTH4 |
-			bytes);
+                        DCMD_ENDIRQEN |
+                        DCMD_BURST32 |
+                        DCMD_WIDTH4 |
+                        bytes);
     DCSR(dma->chan) |= DCSR_RUN;
 }
 
@@ -1088,15 +1084,15 @@ void libera_dma_get_DMAC_csize(libera_dma_t *dma)
      *          DMA fifo overflow.
      */
     csize_temp = MIN(
-		     (MIN( dma->remaining,
-			   LIBERA_DMA_BLOCK_ATOMS )),
-		     (MIN( tailDMA_FIFO(dma),
-			   DD_OB_SIZE(dma->obFIFOstatus) ))
-		     );
+                     (MIN( dma->remaining,
+                           LIBERA_DMA_BLOCK_ATOMS )),
+                     (MIN( tailDMA_FIFO(dma),
+                           DD_OB_SIZE(dma->obFIFOstatus) ))
+                     );
     dma->csize = MIN(
-		     (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)),
-		     csize_temp
-		     );
+                     (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)),
+                     csize_temp
+                     );
 
     PDEBUG3("New dma->csize = %lu\n", dma->csize);
     PDEBUG3("  dma->remaining = %lu\n", dma->remaining);
@@ -1122,48 +1118,48 @@ libera_dma_interrupt(int irq, void *dev_id)
         PDEBUG3("DMA_int: End interrupt.\n");
         DCSR(dma->chan) |= DCSR_ENDINTR;
 
-	/* Refresh OB status */
-	dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
+        /* Refresh OB status */
+        dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
 
-	/* Check Overrun */
-	if (DD_OB_OVERRUN(dma->obFIFOstatus)) {
-	    dma->Overrun = TRUE;
-	    PDEBUG("Overrun: OB_status = 0x%08lx in dma irq.\n", dma->obFIFOstatus);
-	    /* NOTE: The OVERRUN bit is set when the CB-PUT and
-	     *       CB-GET pointers point to the same PAGE.
-	     *       This can only happen when the CB-PUT pointer
-	     *       caches the CB-GET pointer; a real overrun
-	     *       situation.
-	     *       CB-GET pointer can never catch the CB-PUT
-	     *       pointer because of the SDRAM-OB_FIFO
-	     *       synchronization in FPGA.
-	     */
-	}
+        /* Check Overrun */
+        if (DD_OB_OVERRUN(dma->obFIFOstatus)) {
+            dma->Overrun = TRUE;
+            PDEBUG("Overrun: OB_status = 0x%08lx in dma irq.\n", dma->obFIFOstatus);
+            /* NOTE: The OVERRUN bit is set when the CB-PUT and
+             *       CB-GET pointers point to the same PAGE.
+             *       This can only happen when the CB-PUT pointer
+             *       caches the CB-GET pointer; a real overrun
+             *       situation.
+             *       CB-GET pointer can never catch the CB-PUT
+             *       pointer because of the SDRAM-OB_FIFO
+             *       synchronization in FPGA.
+             */
+        }
 
         /* Refresh DMA state */
         dma->remaining -= dma->csize;
         if (putToDMA_FIFO(dma, dma->csize) < 0)
             printk(KERN_CRIT "libera: DMA irq: FIFO overflow.\n");
-	libera_dma_get_DMAC_csize(dma);
+        libera_dma_get_DMAC_csize(dma);
 
         if (dma->csize > 0) {
-	    /* Initiate new DMA transfer */
-	    // TODO: LIBERA_IOBASE is not configurable !!!
-	    libera_dma_command((LIBERA_IOBASE + DD_OB_FIFOBASE),
-			       &dma->buf[dma->put],
-			       dma->csize*sizeof(libera_atom_dd_t));
+            /* Initiate new DMA transfer */
+            // TODO: LIBERA_IOBASE is not configurable !!!
+            libera_dma_command((LIBERA_IOBASE + DD_OB_FIFOBASE),
+                               &dma->buf[dma->put],
+                               dma->csize*sizeof(libera_atom_dd_t));
         } else {
             /* NOTE: This is not neccessarily the end of DMA transfer.
-	     *       dma->csize == 0 is a regular state and will happen
-	     *       when OB-fifo size < 8.
-	     *       We will just silently let the reader process
-	     *       (main DMA fifo reading loop) decide how to handle
-	     *       this situation.
-	     */
-	    dma->DMAC_transfer = FALSE;
+             *       dma->csize == 0 is a regular state and will happen
+             *       when OB-fifo size < 8.
+             *       We will just silently let the reader process
+             *       (main DMA fifo reading loop) decide how to handle
+             *       this situation.
+             */
+            dma->DMAC_transfer = FALSE;
             DEBUG_ONLY(if (dma->csize < 0) {
                 PDEBUG("libera: DMA irq: Negative dma->csize = %ld.\n",
-		       dma->csize);
+                       dma->csize);
             });
         }
 
@@ -1187,53 +1183,6 @@ libera_dma_interrupt(int irq, void *dev_id)
     return;
 }
 
-/** Called on seek() system call on a device.
- *
- * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 63.
- */
-loff_t
-libera_llseek(struct file *file, loff_t offset, int origin)
-{
-    /* Unseekable by default */
-    return -ESPIPE;
-}
-
-
-/** Called on read() system call on a device.
- *
- * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 63.
- */
-ssize_t
-libera_read(struct file *file, char *buf, size_t count, loff_t *f_pos)
-{
-    /* Cannot read() by default */
-    return -EINVAL;
-}
-
-
-/** Called on write() system call.
- *
- * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 63.
- */
-ssize_t
-libera_write(struct file *file, const char *buf, size_t count, loff_t *f_pos)
-{
-    /* Cannot write() by default */
-    return -EINVAL;
-}
-
-
-/** Called on ioctl() system call.
- *
- * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 63.
- */
-int
-libera_ioctl(struct inode *inode, struct file *file,
-	     unsigned int cmd, unsigned long arg)
-{
-    /* No ioctl() by default */
-    return -EINVAL;
-}
 
 
 /** Called on open() system call.
@@ -1250,7 +1199,7 @@ libera_open(struct inode *inode, struct file *file)
 
     /* Check minor number overflow */
     if (minor > LIBERA_MAX_MINOR)
-	return -ENODEV;
+        return -ENODEV;
 
     /* Make device data the private data */
     file->private_data = (void *) libera_dev[minor];
@@ -1261,39 +1210,16 @@ libera_open(struct inode *inode, struct file *file)
 }
 
 
-/** Called on close() system call.
- *
- * Because of our dispatch mechanism on open(), this function should never
- * be called.
- *
- * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 63.
- */
-static int
-libera_release(struct inode *inode, struct file *file)
-{
-    /* NOTE: This should never be called because we dispatch on open()
-     *       acoording to minor numbers.
-     */
-    LIBERA_LOG("This should never happen!!! file: %s, line: %d",
-	       __FILE__, __LINE__);
-
-    return 0;
-}
-
-
 /** Dispatcher (main) file operations
  *
  * For details see: Alessandro Rubini et al., Linux Device Drivers, pp. 66.
  */
 static struct file_operations libera_fops = {
     owner:          THIS_MODULE,
-    llseek:	    libera_llseek,
-    read:           libera_read,
-    write:          libera_write,
-    ioctl:          libera_ioctl,
     open:           libera_open,
-    release:        libera_release,
 };
+
+
 
 /** Initialize libera internal device structures.
  *
@@ -1374,13 +1300,13 @@ static void libera_init_devs(void)
     init_waitqueue_head(&dev_event->EVENT_queue);
     for (i=0; i < TRIG_EVENTS_MAX; i++)
     {
-	flushFIFO(&dev_event->sc_timestamps[i]);
-	flushFIFO(&dev_event->mc_timestamps[i]);
-	flushCircBuf(&dev_event->paired_timestamps[i]);
-	memset(&dev_event->sc_self_inc, 0, sizeof(glitch_CB_t));
-	memset(&dev_event->mc_self_inc, 0, sizeof(glitch_CB_t));
-	memset(&dev_event->sc_trig10, 0, sizeof(glitch_CB_t));
-	memset(&dev_event->mc_trig10, 0, sizeof(glitch_CB_t));
+        flushFIFO(&dev_event->sc_timestamps[i]);
+        flushFIFO(&dev_event->mc_timestamps[i]);
+        flushCircBuf(&dev_event->paired_timestamps[i]);
+        memset(&dev_event->sc_self_inc, 0, sizeof(glitch_CB_t));
+        memset(&dev_event->mc_self_inc, 0, sizeof(glitch_CB_t));
+        memset(&dev_event->sc_trig10, 0, sizeof(glitch_CB_t));
+        memset(&dev_event->mc_trig10, 0, sizeof(glitch_CB_t));
     }
     dev_event->HB_start_lmt = 0x8000000;
     /*
@@ -1422,10 +1348,6 @@ static void libera_init_devs(void)
 }
 
 
-void __you_cannot_kmalloc_that_much(void)
-{
-  LIBERA_LOG("You cannot kmalloc that much!\n");
-}
 
 
 /** Libera driver initialization.
@@ -1447,8 +1369,8 @@ static int __init libera_init(void)
     /* Module parameters sanity check */
     if (flmcdHz == 0)
     {
-	ASSERT(TRUE);
-	return -EINVAL;
+        ASSERT(TRUE);
+        return -EINVAL;
     }
 
     /* Initialize Libera internal dev structures */
@@ -1459,37 +1381,37 @@ static int __init libera_init(void)
     ret = check_mem_region(iobase, iorange);
     if (ret < 0)
     {
-	LIBERA_LOG("Unable to claim I/O memory, range 0x%lx-0x%lx\n",
-		   iobase, iobase+iorange-1);
-	if (ret == -EINVAL)
-	    LIBERA_LOG("Invalid I/O memory range.\n");
-	else if (ret == -EBUSY)
-	    LIBERA_LOG("I/O memory already in use.\n");
-	else
-	    LIBERA_LOG("check_mem_region() returned %d.\n", ret);
-	goto err_IOmem;
+        LIBERA_LOG("Unable to claim I/O memory, range 0x%lx-0x%lx\n",
+                   iobase, iobase+iorange-1);
+        if (ret == -EINVAL)
+            LIBERA_LOG("Invalid I/O memory range.\n");
+        else if (ret == -EBUSY)
+            LIBERA_LOG("I/O memory already in use.\n");
+        else
+            LIBERA_LOG("check_mem_region() returned %d.\n", ret);
+        goto err_IOmem;
     }
     else if (request_mem_region(iobase, iorange, LIBERA_NAME) == NULL)
     {
-	LIBERA_LOG("I/O memory region request failed (range 0x%lx-0x%lx)\n",
-		   iobase, iobase+iorange-1);
-	ret = -ENODEV;
-	goto err_IOmem;
+        LIBERA_LOG("I/O memory region request failed (range 0x%lx-0x%lx)\n",
+                   iobase, iobase+iorange-1);
+        ret = -ENODEV;
+        goto err_IOmem;
     }
 
     /* Register character device for communication via VFS */
     ret = register_chrdev(LIBERA_MAJOR, LIBERA_NAME, &libera_fops);
     if (ret < 0) {
-	LIBERA_LOG("Unable to register major %d.\n", LIBERA_MAJOR);
-	if (ret == -EINVAL)
-	    LIBERA_LOG("Invalid major number.\n");
-	else if (ret == -EBUSY)
-	    LIBERA_LOG("Device with major %d already registered.\n",
-		       LIBERA_MAJOR);
-	else
-	    LIBERA_LOG("register_chrdev() returned %d.\n", ret);
+        LIBERA_LOG("Unable to register major %d.\n", LIBERA_MAJOR);
+        if (ret == -EINVAL)
+            LIBERA_LOG("Invalid major number.\n");
+        else if (ret == -EBUSY)
+            LIBERA_LOG("Device with major %d already registered.\n",
+                       LIBERA_MAJOR);
+        else
+            LIBERA_LOG("register_chrdev() returned %d.\n", ret);
 
-	goto err_ChrDev;
+        goto err_ChrDev;
     }
 
     /* Libera Brilliance detection */
@@ -1511,7 +1433,7 @@ static int __init libera_init(void)
 
     /* Syslog entry */
     printk(LIBERA_SYSLOG_LEVEL "Libera %s%s, version %s (%s %s)\n",
-	   libera_desc.name,
+           libera_desc.name,
            LIBERA_IS_BRILLIANCE(lgbl.feature) ? " BRILLIANCE" : "",
            XSTR( RELEASE_VERSION ),
            __DATE__, __TIME__);
@@ -1521,12 +1443,12 @@ static int __init libera_init(void)
     printk(LIBERA_SYSLOG_LEVEL "       CIC = %ld \n", lgbl.dcic);
     printk(LIBERA_SYSLOG_LEVEL "       FIR = %ld \n", lgbl.num_dfir);
     LIBERA_LOG("I/O memory range 0x%lx-0x%lx\n",
-	       iobase, iobase+iorange-1);
+               iobase, iobase+iorange-1);
 
     /* DMA buffer */
     lgbl.dma.buf = (libera_atom_dd_t *)
-	__get_free_pages(GFP_KERNEL|__GFP_DMA,
-			 LIBERA_DMA_PAGE_ORDER);
+        __get_free_pages(GFP_KERNEL|__GFP_DMA,
+                         LIBERA_DMA_PAGE_ORDER);
     if (!lgbl.dma.buf) {
         LIBERA_LOG("FATAL: Can't allocate DMA buffer.\n");
         ret = -ENOMEM;
@@ -1535,16 +1457,16 @@ static int __init libera_init(void)
 
     /* DMA channel */
     lgbl.dma.chan = pxa_request_dma(LIBERA_NAME, DMA_PRIO_HIGH,
-				    libera_dma_interrupt, 0);
+                                    libera_dma_interrupt, 0);
     if (lgbl.dma.chan < 0) {
         LIBERA_LOG("FATAL: Can't register DMA channel.\n");
         ret = -ECHRNG;
         goto err_DMACH;
     }
     LIBERA_LOG("DMA%i: %lu bytes at 0x%08lx\n",
-	       lgbl.dma.chan,
-	       PAGE_SIZE << LIBERA_DMA_PAGE_ORDER,
-	       (unsigned long)lgbl.dma.buf);
+               lgbl.dma.chan,
+               PAGE_SIZE << LIBERA_DMA_PAGE_ORDER,
+               (unsigned long)lgbl.dma.buf);
 
     lgbl.dma.aborting = FALSE;
 
@@ -1577,33 +1499,33 @@ static int __init libera_init(void)
 
     /* Interrupt handler registration */
     ret = request_irq(lgbl.irq, libera_interrupt,
-		      IRQF_DISABLED, LIBERA_NAME, NULL);
+                      IRQF_DISABLED, LIBERA_NAME, NULL);
     if (ret) {
-	LIBERA_LOG("Can't register interrupt on IRQ %i\n", lgbl.irq);
-	lgbl.irq = -1;
-	goto err_IRQ;
+        LIBERA_LOG("Can't register interrupt on IRQ %i\n", lgbl.irq);
+        lgbl.irq = -1;
+        goto err_IRQ;
     }
     else {
-	LIBERA_LOG("Registered interrupt on IRQ %i\n", lgbl.irq);
-	// Clear any Helper IRQ
-	readl(iobase + SBC_IRQ2);
-	set_irqMask(LIBERA_INTERRUPT_SC_MASK |
-		    LIBERA_INTERRUPT_MC_MASK |
-		    LIBERA_INTERRUPT_HELPSC_MASK |
-		    LIBERA_INTERRUPT_HELPMC_MASK |
-		    LIBERA_INTERRUPT_DD_MASK |
-		    LIBERA_INTERRUPT_SA_MASK |
-		    LIBERA_INTERRUPT_ILK_MASK);
-	libera_sctrig_enable(event,
-			     TRIGGER_BIT(T_TRIG_CTIME) |
-			     TRIGGER_BIT(T_TRIG_TRIGGER) |
-			     TRIGGER_BIT(T_TRIG_POST_MORTEM)
-			     );
-	libera_mctrig_enable(event,
-			     TRIGGER_BIT(T_TRIG_CTIME) |
-			     TRIGGER_BIT(T_TRIG_TRIGGER) |
-			     TRIGGER_BIT(T_TRIG_POST_MORTEM)
-			     );
+        LIBERA_LOG("Registered interrupt on IRQ %i\n", lgbl.irq);
+        // Clear any Helper IRQ
+        readl(iobase + SBC_IRQ2);
+        set_irqMask(LIBERA_INTERRUPT_SC_MASK |
+                    LIBERA_INTERRUPT_MC_MASK |
+                    LIBERA_INTERRUPT_HELPSC_MASK |
+                    LIBERA_INTERRUPT_HELPMC_MASK |
+                    LIBERA_INTERRUPT_DD_MASK |
+                    LIBERA_INTERRUPT_SA_MASK |
+                    LIBERA_INTERRUPT_ILK_MASK);
+        libera_sctrig_enable(event,
+                             TRIGGER_BIT(T_TRIG_CTIME) |
+                             TRIGGER_BIT(T_TRIG_TRIGGER) |
+                             TRIGGER_BIT(T_TRIG_POST_MORTEM)
+                             );
+        libera_mctrig_enable(event,
+                             TRIGGER_BIT(T_TRIG_CTIME) |
+                             TRIGGER_BIT(T_TRIG_TRIGGER) |
+                             TRIGGER_BIT(T_TRIG_POST_MORTEM)
+                             );
     }
 
     set_irq_type(IRQ_GPIO(gpio),  IRQ_TYPE_EDGE_RISING);
@@ -1633,22 +1555,22 @@ static int __init libera_init(void)
     /* Module loaded OK */
     return 0;
 
- err_IRQ:
+err_IRQ:
     vfree(dev_pm->buf);
 
- err_PMBUF:
+err_PMBUF:
     pxa_free_dma(lgbl.dma.chan);
 
- err_DMACH:
+err_DMACH:
     free_pages((unsigned long)lgbl.dma.buf, LIBERA_DMA_PAGE_ORDER);
 
- err_DMABUF:
+err_DMABUF:
     unregister_chrdev(LIBERA_MAJOR, LIBERA_NAME);
 
- err_ChrDev:
+err_ChrDev:
     release_mem_region(iobase,iorange);
 
- err_IOmem:
+err_IOmem:
 
     return ret;
 }
@@ -1661,34 +1583,35 @@ static int __init libera_init(void)
  */
 static void __exit libera_exit(void)
 {
-	struct libera_pm_device    *dev_pm = &libera_pm;
+    struct libera_pm_device    *dev_pm = &libera_pm;
 
-	/* Uninstall interrupt handler */
-	if (lgbl.irq >= 0) {
-	set_irqMask(0UL);
-	writel(0UL, iobase + T_SC_TRIGGER_MASK);
-	writel(0UL, iobase + T_MC_TRIGGER_MASK);
-		free_irq(lgbl.irq, NULL);
-	}
+    /* Uninstall interrupt handler */
+    if (lgbl.irq >= 0) {
+        set_irqMask(0UL);
+        writel(0UL, iobase + T_SC_TRIGGER_MASK);
+        writel(0UL, iobase + T_MC_TRIGGER_MASK);
+        free_irq(lgbl.irq, NULL);
+    }
 
-	/* PM buffer */
-	vfree(dev_pm->buf);
+    /* PM buffer */
+    vfree(dev_pm->buf);
 
-	/* DMA */
-	if (lgbl.dma.chan >= 0)
-	pxa_free_dma(lgbl.dma.chan);
-	free_pages((unsigned long)lgbl.dma.buf, LIBERA_DMA_PAGE_ORDER);
+    /* DMA */
+    if (lgbl.dma.chan >= 0)
+        pxa_free_dma(lgbl.dma.chan);
+    free_pages((unsigned long)lgbl.dma.buf, LIBERA_DMA_PAGE_ORDER);
 
-	/* Unregister character device for communication via VFS */
-	unregister_chrdev(LIBERA_MAJOR, LIBERA_NAME);
+    /* Unregister character device for communication via VFS */
+    unregister_chrdev(LIBERA_MAJOR, LIBERA_NAME);
 
-	/* Release I/O memory regions */
-	if (iobase != 0) {
-		release_mem_region(iobase, iorange);
-		iounmap((void *)(iobase & PAGE_MASK));
-	}
-	printk(KERN_INFO LIBERA_NAME " : Libera %s, version %s (%s %s): unloaded.\n",
-	libera_desc.name, XSTR( RELEASE_VERSION ), __DATE__, __TIME__);
+    /* Release I/O memory regions */
+    if (iobase != 0) {
+        release_mem_region(iobase, iorange);
+        iounmap((void *)(iobase & PAGE_MASK));
+    }
+    printk(KERN_INFO LIBERA_NAME
+        " : Libera %s, version %s (%s %s): unloaded.\n",
+        libera_desc.name, XSTR( RELEASE_VERSION ), __DATE__, __TIME__);
 }
 
 

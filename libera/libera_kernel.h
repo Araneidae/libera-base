@@ -754,18 +754,6 @@ libera_dma_command(
 	void* target_addr,
 	unsigned long bytes);
 
-extern loff_t
-libera_llseek(struct file *file, loff_t offset, int origin);
-
-extern ssize_t
-libera_read(struct file *file, char *buf, size_t count, loff_t *f_pos);
-
-extern ssize_t
-libera_write(struct file *file, const char *buf, size_t count, loff_t *f_pos);
-
-extern int
-libera_ioctl(struct inode *inode, struct file *file,
-	     unsigned int cmd, unsigned long arg);
 
 extern int 
 libera_send_event(int id, int param);
