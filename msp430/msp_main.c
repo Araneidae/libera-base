@@ -239,18 +239,19 @@ static int initialise_msp(void)
     }
     /* Next, I/O memory resource allocation.  We only need the MSP reset
      * register. */
-    if (request_mem_region(MSP_RESET_BASE, 1, "msp") == NULL)
+    void * request = request_mem_region(MSP_RESET_BASE, 1, "msp");
+    if (IS_ERR(request))
     {
-        printk(KERN_ERR "Unable to allocate MSP reset register\n");
-        ret = -ENODEV;
+        ret = PTR_ERR(request);
+        printk(KERN_ERR "Unable to allocate MSP reset register: %d\n", -ret);
         goto no_region;
     }
     /* Map the reset register. */
     msp_reset_register = ioremap_nocache(MSP_RESET_BASE, 1);
-    if (msp_reset_register == NULL)
+    if (IS_ERR(msp_reset_register))
     {
-        printk(KERN_ERR "Unable to remap MSP reset register\n");
-        ret = -ENODEV;
+        ret = PTR_ERR(msp_reset_register);
+        printk(KERN_ERR "Unable to remap MSP reset register: %d\n", -ret);
         goto no_iobase;
     }
     
@@ -395,18 +396,18 @@ static int __init msp_init(void)
 
     /* Bind device to class: this places appropriate entries in /dev. */
     msp_class = class_create(THIS_MODULE, "msp");
-    if (msp_class == NULL)
+    if (IS_ERR(msp_class))
     {
-        printk(KERN_ERR "Unable to create msp class\n");
-        ret = -ENODEV;
+        ret = PTR_ERR(msp_class);
+        printk(KERN_ERR "Unable to create msp class: %d\n", -ret);
         goto no_class;
     }
     struct device * msp_device =
         device_create(msp_class, NULL, msp_dev, "msp0");
-    if (msp_device == NULL)
+    if (IS_ERR(msp_device))
     {
-        printk(KERN_ERR "Unable to create msp device in class\n");
-        ret = -ENODEV;
+        ret = PTR_ERR(msp_device);
+        printk(KERN_ERR "Unable to create msp device in class: %d\n", -ret);
         goto no_device;
     }
     return 0;
