@@ -121,7 +121,7 @@ void die(const char *function, int line, const char *what)
 
 /* Sensor detection. */
 
-#define I2C_DEVICE "/sys/class/i2c-adapter/i2c-0/device/"
+#define I2C_DEVICE "/sys/bus/i2c/devices/"
 
 const char * temp_electron   = I2C_DEVICE "0-0029/temp1_input";
 const char * temp_brilliance = I2C_DEVICE "0-0018/temp1_input";
