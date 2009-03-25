@@ -1,7 +1,9 @@
 LINUX_VERSION = 2.6.26.8
 
-KERNEL_SOURCE_DIR = /home/mga83/git/linux-2.6
+# KERNEL_SOURCE_DIR = /home/mga83/git/linux-2.6
 
 CONFIG = config-$(LINUX_VERSION)
 
-PATCHES = xcep-2.6.26.8.patch
+PATCHES = \
+    patches/0001-iTech-xcep-support.patch  \
+    patches/0002-Patch-for-PXA_SSP-support.patch

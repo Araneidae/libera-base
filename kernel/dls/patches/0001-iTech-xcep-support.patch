@@ -1,11 +1,23 @@
-commit 832e30394c2b95cb23434d0285e720684db1dc4c
-Author: Michael Abbott <michael.abbott@diamond.ac.uk>
-Date:   Wed Mar 18 13:42:08 2009 +0000
+From 4ddce569fd98bbb19f4fe8f88de9604313b0e7db Mon Sep 17 00:00:00 2001
+From: Michael Abbott <michael.abbott@diamond.ac.uk>
+Date: Wed, 18 Mar 2009 13:42:08 +0000
+Subject: [PATCH 1/2] iTech xcep support.
 
-    iTech xcep support.
-    
-    Adds support for the XCEP ARM PXA255 board from IskraTel.  This board
-    includes an SMSC LAN91C111 network device, together with flash and RAM.
+Adds support for the XCEP ARM PXA255 board from IskraTel.  This board
+includes an SMSC LAN91C111 network device, together with flash and RAM.
+---
+ arch/arm/mach-pxa/Kconfig       |    4 +
+ arch/arm/mach-pxa/Makefile      |    1 +
+ arch/arm/mach-pxa/xcep.c        |  142 ++++++++++++++++++++++++++++++++++++++
+ drivers/mtd/maps/Kconfig        |    7 ++
+ drivers/mtd/maps/Makefile       |    1 +
+ drivers/mtd/maps/xcep.c         |  143 +++++++++++++++++++++++++++++++++++++++
+ drivers/net/smc91x.h            |   21 ++++++
+ include/asm-arm/arch-pxa/xcep.h |   87 ++++++++++++++++++++++++
+ 8 files changed, 406 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-pxa/xcep.c
+ create mode 100644 drivers/mtd/maps/xcep.c
+ create mode 100644 include/asm-arm/arch-pxa/xcep.h
 
 diff --git a/arch/arm/mach-pxa/Kconfig b/arch/arm/mach-pxa/Kconfig
 index 5da7a68..2a60846 100644
@@ -214,10 +226,10 @@ index 957fb5f..e3f47cb 100644
  obj-$(CONFIG_MTD_OCTAGON)	+= octagon-5066.o
 diff --git a/drivers/mtd/maps/xcep.c b/drivers/mtd/maps/xcep.c
 new file mode 100644
-index 0000000..6bb5c18
+index 0000000..e72cdc8
 --- /dev/null
 +++ b/drivers/mtd/maps/xcep.c
-@@ -0,0 +1,153 @@
+@@ -0,0 +1,143 @@
 +/*
 + * $Id$
 + *
@@ -323,7 +335,6 @@ index 0000000..6bb5c18
 +		   xcep_map.bankwidth * 8);
 +	
 +	xcep_mtd = do_map_probe("cfi_probe", &xcep_map);
-+	
 +	if (!xcep_mtd) {
 +		iounmap((void *)xcep_map.virt);
 +		if (xcep_map.cached)
@@ -332,18 +343,9 @@ index 0000000..6bb5c18
 +	}
 +	xcep_mtd->owner = THIS_MODULE;
 +	
-+	ret = parse_mtd_partitions(xcep_mtd, probes,
-+							   &parsed_parts, 0);
-+	
-+	if (ret > 0)
-+		nr_parsed_parts = ret;
-+
-+
-+	if (!xcep_mtd)
-+		return ret;
-+	
-+	if (nr_parsed_parts) {
-+		add_mtd_partitions(xcep_mtd, parsed_parts, nr_parsed_parts);
++	ret = parse_mtd_partitions(xcep_mtd, probes, &parsed_parts, 0);
++	if (ret > 0) {
++		add_mtd_partitions(xcep_mtd, parsed_parts, ret);
 +	} else {
 +		printk("Using static partitions on %s\n", xcep_map.name);
 +		add_mtd_partitions(xcep_mtd, xcep_partitions, ARRAY_SIZE(xcep_partitions));
@@ -496,3 +498,6 @@ index 0000000..f5fda0c
 +#define EVB_FPGA_PCCR (*(volatile unsigned short *)(EVB_FPGA_PCCR_BASE))	
 +#define EVB_FPGA_PCCR_H (*(volatile unsigned char *)(EVB_FPGA_PCCR_H_BASE))
 +#endif
+-- 
+1.6.1.3
+
