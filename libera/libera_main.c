@@ -31,6 +31,8 @@ or visit http://www.gnu.org
 #include <linux/interrupt.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
+#include <linux/cdev.h>
+#include <linux/device.h>
 
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -96,6 +98,13 @@ libera_ilk_handler_specific(unsigned long status);
 
 extern libera_desc_t libera_desc;
 
+/* Dynamically allocated device number. */
+static dev_t libera_dev_no;
+/* Character device representation. */
+static struct cdev libera_cdev;
+/* Class used to link these devices into /sys. */
+static struct class * libera_class;
+
 /* Libera devices private status */
 struct libera_cfg_device   libera_cfg;
 struct libera_dd_device    libera_dd;
@@ -116,6 +125,19 @@ void *libera_dev[] = {
     (void *)&libera_adc,
     (void *)&libera_dsc
 };
+
+static const char * device_names[] = {
+    "libera.cfg",
+    "libera.dd",
+    "libera.fa",
+    "libera.pm",
+    "libera.sa",
+    "libera.event",
+    "libera.adc",
+    "libera.dsc",
+};
+
+static struct device * libera_devices[ARRAY_SIZE(device_names)];
 
 unsigned long dummy_return_value;
 
@@ -161,6 +183,11 @@ unsigned long pmsize = LIBERA_PMSIZE_INITIAL;
 
 /* Default logical atom size */
 unsigned long atomsize = 0;
+
+/* Physical iobase.  This is the value configured in iobase which is then
+ * overwritten once the region is allocated -- need to remember this so we
+ * can unallocate the memory region properly. */
+static unsigned long physical_iobase;
 
 /* Module properties and parameters */
 MODULE_AUTHOR("Ales Bardorfer, Instrumentation Technologies");
@@ -1348,6 +1375,89 @@ static void libera_init_devs(void)
 }
 
 
+static int __init install_devices(void)
+{
+    const int dev_count = ARRAY_SIZE(libera_dev);
+    int ret = alloc_chrdev_region(&libera_dev_no, 0, dev_count, "libera");
+    if (ret < 0)
+    {
+        printk(KERN_ERR "Unable to allocate devs for libera: %d\n", -ret);
+        goto no_chrdev;
+    }
+
+    cdev_init(&libera_cdev, &libera_fops);
+    libera_cdev.owner = THIS_MODULE;
+    ret = cdev_add(&libera_cdev, libera_dev_no, dev_count);
+    if (ret < 0)
+    {
+        printk(KERN_ERR "Unable to register libera device: %d\n", -ret);
+        goto no_cdev;
+    }
+
+    libera_class = class_create(THIS_MODULE, "libera");
+    if (IS_ERR(libera_class))
+    {
+        ret = PTR_ERR(libera_class);
+        printk(KERN_ERR "Unable to register libera class: %d\n", -ret);
+        goto no_class;
+    }
+
+    const int major = MAJOR(libera_dev_no);
+    int minor;
+    for (minor = 0; minor < dev_count; minor ++)
+    {
+        struct device * device = device_create(
+            libera_class, NULL, MKDEV(major, minor), device_names[minor]);
+        if (IS_ERR(device))
+        {
+            ret = PTR_ERR(device);
+            printk(KERN_ERR "Unable to create device %s: %d\n",
+                device_names[minor], -ret);
+            goto no_dev;
+        }
+        libera_devices[minor] = device;
+    }
+    
+    return 0;
+
+    int last_minor;
+no_dev: 
+    last_minor = minor;
+    for (minor = 0; minor < last_minor; minor ++)
+        device_destroy(libera_class, MKDEV(major, minor));
+    class_destroy(libera_class);
+no_class:
+    cdev_del(&libera_cdev);
+no_cdev:
+    unregister_chrdev_region(libera_dev_no, ARRAY_SIZE(libera_dev));
+no_chrdev:
+    return ret;
+}
+
+static void __exit uninstall_devices(void)
+{
+    const int dev_count = ARRAY_SIZE(libera_dev);
+
+    const int major = MAJOR(libera_dev_no);
+    int minor;
+    for (minor = 0; minor < dev_count; minor ++)
+        device_destroy(libera_class, MKDEV(major, minor));
+    
+    class_destroy(libera_class);
+    cdev_del(&libera_cdev);
+    unregister_chrdev_region(libera_dev_no, dev_count);
+}
+
+
+/* Uninstall interrupt handler */
+static void uninstall_interrupts(void)
+{
+    set_irqMask(0UL);
+    writel(0UL, iobase + T_SC_TRIGGER_MASK);
+    writel(0UL, iobase + T_MC_TRIGGER_MASK);
+    free_irq(lgbl.irq, NULL);
+}
+
 
 
 /** Libera driver initialization.
@@ -1377,42 +1487,16 @@ static int __init libera_init(void)
     libera_init_devs();
 
     /* I/O memory resource allocation */
-    iobase = (unsigned)ioremap_nocache(iobase, iorange);
-    ret = check_mem_region(iobase, iorange);
-    if (ret < 0)
-    {
-        LIBERA_LOG("Unable to claim I/O memory, range 0x%lx-0x%lx\n",
-                   iobase, iobase+iorange-1);
-        if (ret == -EINVAL)
-            LIBERA_LOG("Invalid I/O memory range.\n");
-        else if (ret == -EBUSY)
-            LIBERA_LOG("I/O memory already in use.\n");
-        else
-            LIBERA_LOG("check_mem_region() returned %d.\n", ret);
-        goto err_IOmem;
-    }
-    else if (request_mem_region(iobase, iorange, LIBERA_NAME) == NULL)
+    physical_iobase = iobase;
+    if (request_mem_region(physical_iobase, iorange, LIBERA_NAME) == NULL)
     {
         LIBERA_LOG("I/O memory region request failed (range 0x%lx-0x%lx)\n",
                    iobase, iobase+iorange-1);
         ret = -ENODEV;
         goto err_IOmem;
     }
+    iobase = (unsigned) ioremap_nocache(iobase, iorange);
 
-    /* Register character device for communication via VFS */
-    ret = register_chrdev(LIBERA_MAJOR, LIBERA_NAME, &libera_fops);
-    if (ret < 0) {
-        LIBERA_LOG("Unable to register major %d.\n", LIBERA_MAJOR);
-        if (ret == -EINVAL)
-            LIBERA_LOG("Invalid major number.\n");
-        else if (ret == -EBUSY)
-            LIBERA_LOG("Device with major %d already registered.\n",
-                       LIBERA_MAJOR);
-        else
-            LIBERA_LOG("register_chrdev() returned %d.\n", ret);
-
-        goto err_ChrDev;
-    }
 
     /* Libera Brilliance detection */
     lgbl.feature = readl(iobase + FPGA_FEATURE_ITECH);
@@ -1493,7 +1577,6 @@ static int __init libera_init(void)
     set_irqMask(0UL); /* Initial IRQ disable */
 
     pxa_gpio_mode(gpio);
-
     lgbl.irq = IRQ_GPIO(gpio);
 
 
@@ -1552,24 +1635,28 @@ static int __init libera_init(void)
            readl(iobase + FPGA_INFO_DEC_CIC_FIR));
 #endif
 
+
+    /* Finally: all the hardware is up and running, time to install the
+     * interfaces to userland. */
+    ret = install_devices();
+    if (ret < 0)
+        goto err_device;
+
     /* Module loaded OK */
     return 0;
 
+    
+err_device:
+    uninstall_interrupts();
 err_IRQ:
     vfree(dev_pm->buf);
-
 err_PMBUF:
     pxa_free_dma(lgbl.dma.chan);
-
 err_DMACH:
     free_pages((unsigned long)lgbl.dma.buf, LIBERA_DMA_PAGE_ORDER);
-
 err_DMABUF:
-    unregister_chrdev(LIBERA_MAJOR, LIBERA_NAME);
-
-err_ChrDev:
-    release_mem_region(iobase,iorange);
-
+    iounmap((void *)(iobase & PAGE_MASK));
+    release_mem_region(physical_iobase, iorange);
 err_IOmem:
 
     return ret;
@@ -1585,13 +1672,8 @@ static void __exit libera_exit(void)
 {
     struct libera_pm_device    *dev_pm = &libera_pm;
 
-    /* Uninstall interrupt handler */
-    if (lgbl.irq >= 0) {
-        set_irqMask(0UL);
-        writel(0UL, iobase + T_SC_TRIGGER_MASK);
-        writel(0UL, iobase + T_MC_TRIGGER_MASK);
-        free_irq(lgbl.irq, NULL);
-    }
+    uninstall_devices();
+    uninstall_interrupts();
 
     /* PM buffer */
     vfree(dev_pm->buf);
@@ -1601,13 +1683,10 @@ static void __exit libera_exit(void)
         pxa_free_dma(lgbl.dma.chan);
     free_pages((unsigned long)lgbl.dma.buf, LIBERA_DMA_PAGE_ORDER);
 
-    /* Unregister character device for communication via VFS */
-    unregister_chrdev(LIBERA_MAJOR, LIBERA_NAME);
-
     /* Release I/O memory regions */
     if (iobase != 0) {
-        release_mem_region(iobase, iorange);
         iounmap((void *)(iobase & PAGE_MASK));
+        release_mem_region(physical_iobase, iorange);
     }
     printk(KERN_INFO LIBERA_NAME
         " : Libera %s, version %s (%s %s): unloaded.\n",
