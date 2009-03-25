@@ -112,9 +112,10 @@ MODULE_SUPPORTED_DEVICE("msp");
 
 /* MSP protocol defines */
 #define MSP_BAUD_DIVISOR            0x0f
-#define MSP_PROTO_CONV_START        0x10
-#define MSP_PROTO_CONV_IN_PROGRESS  0xef
-#define MSP_PROTO_CONV_TEST         0xa5
+#define MSP_PROTO_CONV_START        0x10    // Triggers conversion start
+#define MSP_PROTO_CONV_IN_PROGRESS  0xef    // Reports conversion in progress
+#define MSP_PROTO_CONV_TEST         0xa5    // Conversion probe
+#define MSP_PROTO_RESET             0xaa    // Returned on MSP reset
 
 
 /* MSP ADC properties */
@@ -181,43 +182,101 @@ static void msp_transform(
 #define SSP_WRITE(reg, value) __raw_writel(value, ssp.ssp->mmio_base + reg)
 #define SSP_READ(reg) __raw_readl(ssp.ssp->mmio_base + reg)
 
-/* Exchange one word over SSP: send a word to the MSP, receive a word in
- * reply.  Because this is how we always work we know that the SSP TX FIFO
- * will be empty, and we should get a reply pretty quickly. */
-static unsigned long ssp_exchange(unsigned long tx)
+/* Exchange one word over SSP.
+ * 
+ * Communication over SSP is rather curious: characters are transmitted
+ * synchronously and simultaneously in both directions when initiate a
+ * transfer by writing to SSDR, so in effect each communication is an
+ * exchange of bytes.
+ *     This means, in particular, that the reply we get is actually the reply
+ * to the last command we sent, not this one.  Unfortunately it also means
+ * (as the other end has no control over communication) that if we talk too
+ * quickly the other end may not have time to have set up its response.  It
+ * seems that if this happens the communication channel never recovers (don't
+ * understand why not).
+ *     We therefore fudge this by inserting delays between every SSP
+ * operation.  We could speed things up a little by being even more cute and
+ * reading one behind -- then we could eliminate one of the two delays here
+ * at the cost of more setup steps during transfer. */
+static int ssp_exchange(unsigned long tx, unsigned long *rx)
 {
     SSP_WRITE(SSDR, tx);
-    while ((SSP_READ(SSSR) & SSSR_RNE) == 0)
-        msp_delay_jiffies(1);
-    return SSP_READ(SSDR) & 0xffff;
+    msp_delay_jiffies(1);
+    int sssr = SSP_READ(SSSR);
+    if ((sssr & SSSR_RNE) == 0)
+    {
+        /* The delay should have been long enough for a reply.  Force a reset
+         * of the MSP and bail out. */
+        printk(KERN_ERR "No response from MSP: SSSR = %08x\n", sssr);
+        msp_reset();
+        return -EBADE;
+    }
+    *rx = SSP_READ(SSDR) & 0xffff;
+    msp_delay_jiffies(1);
+    return 0;
 }
 
 
+static int check_protocol(unsigned long rx, unsigned long expect)
+{
+    if (rx == expect)
+        return 0;
+    else
+    {
+        printk(KERN_ERR "Expected %02lx from MSP, received %02lx.\n",
+            expect, rx);
+        msp_reset();
+        return -EPROTO;
+    }
+}
 
-/* Read data from MSP */
+
+/* Read data from MSP. */
 static ssize_t msp_transfer(char *buf)
 {
     /* Initiate new transfer: send a conversion start command, and then wait
      * for conversion to complete. */
-    ssp_exchange(MSP_PROTO_CONV_START);
-    while (ssp_exchange(MSP_PROTO_CONV_TEST) == MSP_PROTO_CONV_IN_PROGRESS)
-        msp_delay_jiffies(1);
+    unsigned long rx;
+    int ret = ssp_exchange(MSP_PROTO_CONV_START, &rx);
+    if (ret == 0)
+        ret = check_protocol(rx, MSP_PROTO_RESET);
+    if (ret < 0)
+        return ret;
+        
+    while (ret = ssp_exchange(MSP_PROTO_CONV_TEST, &rx),
+           ret == 0  &&  rx == MSP_PROTO_CONV_IN_PROGRESS)
+        /* Waiting for conversion. */
+        ;
 
-    if (ssp_exchange(0) != MSP_PROTO_CONV_TEST + 1) 
-        return -EBADE;
+    if (ret == 0)
+        ret = check_protocol(rx, MSP_PROTO_CONV_TEST + 1);
+    if (ret == 0)
+        ret = ssp_exchange(0, &rx);
+    if (ret == 0)
+        ret = check_protocol(rx, MSP_PROTO_CONV_TEST + 1);
 
     unsigned long rx_buf[32];
     int j;
-    for (j = 0; j < 16; j++) 
-        rx_buf[j] = ssp_exchange(j + 1);
-
-    /* Transform & deliver the received data */
-    struct msp_atom atom;
-    msp_transform(rx_buf, &atom);
-    if (copy_to_user(buf, &atom, sizeof(struct msp_atom)))
-        return -EFAULT;
+    for (j = 0; ret == 0  &&  j < 15; j++)
+        ret = ssp_exchange(j + 1, &rx_buf[j]);
+    if (ret == 0)
+        /* Unfortunately if we use 16 for the last read out we trigger an
+         * early convert!  Instead we send 0xa9 which should push the reset
+         * message into the MSP response queue. */
+        ret = ssp_exchange(MSP_PROTO_RESET - 1, &rx_buf[15]);
+    
+    if (ret < 0)
+        return ret;
     else
-        return sizeof(struct msp_atom);
+    {
+        /* Transform & deliver the received data */
+        struct msp_atom atom;
+        msp_transform(rx_buf, &atom);
+        if (copy_to_user(buf, &atom, sizeof(struct msp_atom)))
+            return -EFAULT;
+        else
+            return sizeof(struct msp_atom);
+    }
 }
 
 
@@ -278,7 +337,7 @@ static int initialise_msp(void)
 
     
 no_iobase:
-    release_mem_region(MSP_RESET_BASE, 4);
+    release_mem_region(MSP_RESET_BASE, 1);
 no_region:
     ssp_exit(&ssp);
 no_ssp:

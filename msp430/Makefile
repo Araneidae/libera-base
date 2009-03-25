@@ -14,6 +14,8 @@ export ARCH = arm
 #KBUILD_CFLAGS += -std=c99
 
 
+test: test.c
+
 
 default:
 #	make -C $(O) M=$(CURDIR) ARCH=arm O=$(O) KBUILD_OUTPUT=$(O)
@@ -25,6 +27,7 @@ clean:
 #	make -C $(KBUILD_OUTPUT) M=$(CURDIR) clean
 	rm -f *.o *.ko .*.cmd *.mod.c *.symvers modules.order
 	rm -rf .tmp_versions
+	rm -f test
 
 
 install:
