@@ -6,4 +6,5 @@ CONFIG = config-$(LINUX_VERSION)
 
 PATCHES = \
     patches/0001-iTech-xcep-support.patch  \
-    patches/0002-Patch-for-PXA_SSP-support.patch
+    patches/0002-Patch-for-PXA_SSP-support.patch \
+    patches/0003-Add-low_power-support-for-adm1021-driver.patch
