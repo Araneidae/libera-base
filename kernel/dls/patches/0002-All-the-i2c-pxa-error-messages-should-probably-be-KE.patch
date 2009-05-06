@@ -1,0 +1,36 @@
+From 6d213c1f78948d245b590088c9b42cebfaf2f5ac Mon Sep 17 00:00:00 2001
+From: Michael Abbott <michael.abbott@diamond.ac.uk>
+Date: Wed, 6 May 2009 07:39:05 +0100
+Subject: [PATCH] All the i2c pxa error messages should probably be KERN_DEBUG
+
+At least, all the printk messages should have a log level specfied,
+and KERN_DEBUG seems appropriate.
+
+Signed-off-by: Michael Abbott <michael.abbott@diamond.ac.uk>
+---
+ drivers/i2c/busses/i2c-pxa.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
+index bdb1f75..8cb9160 100644
+--- a/drivers/i2c/busses/i2c-pxa.c
++++ b/drivers/i2c/busses/i2c-pxa.c
+@@ -210,11 +210,11 @@ static irqreturn_t i2c_pxa_handler(int this_irq, void *dev_id);
+ static void i2c_pxa_scream_blue_murder(struct pxa_i2c *i2c, const char *why)
+ {
+ 	unsigned int i;
+-	printk("i2c: error: %s\n", why);
+-	printk("i2c: msg_num: %d msg_idx: %d msg_ptr: %d\n",
++	printk(KERN_DEBUG "i2c: error: %s\n", why);
++	printk(KERN_DEBUG "i2c: msg_num: %d msg_idx: %d msg_ptr: %d\n",
+ 		i2c->msg_num, i2c->msg_idx, i2c->msg_ptr);
+-	printk("i2c: ICR: %08x ISR: %08x\n"
+-	       "i2c: log: ", readl(_ICR(i2c)), readl(_ISR(i2c)));
++	printk(KERN_DEBUG "i2c: ICR: %08x ISR: %08x\n"
++	       KERN_DEBUG "i2c: log: ", readl(_ICR(i2c)), readl(_ISR(i2c)));
+ 	for (i = 0; i < i2c->irqlogidx; i++)
+ 		printk("[%08x:%08x] ", i2c->isrlog[i], i2c->icrlog[i]);
+ 	printk("\n");
+-- 
+1.6.1.3
+
