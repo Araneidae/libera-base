@@ -14,6 +14,7 @@ endif
 MD5_SUM_2.6.20.14 = 63deab5998064e93196c0b75e77060f0
 MD5_SUM_2.6.26    = 5169d01c405bc3f866c59338e217968c
 MD5_SUM_2.6.26.8  = 05dd0d4f8f110b4219ae6ec7a36c046d
+MD5_SUM_2.6.29.2  = a6839571a9e70baf821d2fb752f9c4c6
 
 default: build
 
@@ -60,6 +61,9 @@ $(O)/.config: $(KERNEL_SOURCE_DIR) $(KERNEL_CONFIG)/$(CONFIG)
 
 menuconfig: $(O)/.config
 	make -C $(KERNEL_SOURCE_DIR) O=$(O) menuconfig
+
+oldconfig:
+	make -C $(KERNEL_SOURCE_DIR) O=$(O) oldconfig
 
 build: $(O)/.config
 	make -C $(KERNEL_SOURCE_DIR) O=$(O) uImage
