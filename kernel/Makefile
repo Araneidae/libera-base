@@ -65,6 +65,9 @@ menuconfig: $(O)/.config
 oldconfig:
 	make -C $(KERNEL_SOURCE_DIR) O=$(O) oldconfig
 
+htmldocs:
+	make -C $(KERNEL_SOURCE_DIR) O=$(O) htmldocs
+
 build: $(O)/.config
 	make -C $(KERNEL_SOURCE_DIR) O=$(O) uImage
 ifeq ($(DEVELOPMENT),y)
