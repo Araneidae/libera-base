@@ -1,4 +1,4 @@
-LINUX_VERSION = 2.6.29.2
+LINUX_VERSION = 2.6.29.3
 
 CONFIG = config-$(LINUX_VERSION)
 
@@ -14,4 +14,13 @@ PATCHES-2.6.29.2 = \
     0004-Export-GPIO-control-symbols-from-mfp-pxa2xx.c.patch \
     0005-Fix-idle-time-field-in-proc-uptime.patch
 
-PATCHES = $(PATCHES-$(LINUX_VERSION):%=patches-$(LINUX_VERSION)/%)
+PATCHES-2.6.29.3 = \
+    0001-Add-low_power-support-for-adm1021-driver.patch \
+    0002-i2c-Add-missing-KERN_-constants-to-printks.patch \
+    0003-Export-GPIO-control-symbols-from-mfp-pxa2xx.c.patch \
+    0004-Fix-idle-time-field-in-proc-uptime.patch \
+    0005-XCEP-PXA255-Processor-Board.patch
+
+
+# PATCHES = $(PATCHES-$(LINUX_VERSION):%=patches-$(LINUX_VERSION)/%)
+PATCHES = $(PATCHES-$(LINUX_VERSION):%=patches/%)

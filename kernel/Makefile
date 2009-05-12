@@ -15,6 +15,7 @@ MD5_SUM_2.6.20.14 = 63deab5998064e93196c0b75e77060f0
 MD5_SUM_2.6.26    = 5169d01c405bc3f866c59338e217968c
 MD5_SUM_2.6.26.8  = 05dd0d4f8f110b4219ae6ec7a36c046d
 MD5_SUM_2.6.29.2  = a6839571a9e70baf821d2fb752f9c4c6
+MD5_SUM_2.6.29.3  = ff37c696bf0b101620b6a8a7209c57e5
 
 default: build
 
@@ -45,6 +46,10 @@ $(KERNEL_SOURCE_DIR):
             exit 1; \
         done
 	touch $(KERNEL_SOURCE_DIR)
+
+# This target is only safe if we've build the source!
+clean-src:
+	rm -rf $(KERNEL_SOURCE_DIR)
 endif
 
 

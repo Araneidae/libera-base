@@ -1,0 +1,92 @@
+From ba2c475c740a30b66849eae8685708bdbb997a15 Mon Sep 17 00:00:00 2001
+From: Frank Seidel <frank@f-seidel.de>
+Date: Sat, 28 Mar 2009 21:34:42 +0100
+Subject: [PATCH] i2c: Add missing KERN_* constants to printks
+
+According to kerneljanitors todo list all printk calls (beginning
+a new line) should have an according KERN_* constant.
+Those are the missing pieces here for the i2c subsystem.
+
+Signed-off-by: Frank Seidel <frank@f-seidel.de>
+Signed-off-by: Jean Delvare <khali@linux-fr.org>
+---
+ drivers/i2c/algos/i2c-algo-pcf.c  |    2 +-
+ drivers/i2c/busses/i2c-pca-isa.c  |    5 +++--
+ drivers/i2c/busses/i2c-powermac.c |    3 ++-
+ drivers/i2c/busses/i2c-pxa.c      |    9 +++++----
+ 4 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/i2c/algos/i2c-algo-pcf.c b/drivers/i2c/algos/i2c-algo-pcf.c
+index 3e01992..36b656b 100644
+--- a/drivers/i2c/algos/i2c-algo-pcf.c
++++ b/drivers/i2c/algos/i2c-algo-pcf.c
+@@ -61,7 +61,7 @@ static int i2c_debug;
+ 
+ static void i2c_start(struct i2c_algo_pcf_data *adap) 
+ {
+-	DEBPROTO(printk("S "));
++	DEBPROTO(printk(KERN_DEBUG "S "));
+ 	set_pcf(adap, 1, I2C_PCF_START);
+ }
+ 
+diff --git a/drivers/i2c/busses/i2c-pca-isa.c b/drivers/i2c/busses/i2c-pca-isa.c
+index 4aa8138..c420a7c 100644
+--- a/drivers/i2c/busses/i2c-pca-isa.c
++++ b/drivers/i2c/busses/i2c-pca-isa.c
+@@ -49,7 +49,8 @@ static void pca_isa_writebyte(void *pd, int reg, int val)
+ {
+ #ifdef DEBUG_IO
+ 	static char *names[] = { "T/O", "DAT", "ADR", "CON" };
+-	printk("*** write %s at %#lx <= %#04x\n", names[reg], base+reg, val);
++	printk(KERN_DEBUG "*** write %s at %#lx <= %#04x\n", names[reg],
++	       base+reg, val);
+ #endif
+ 	outb(val, base+reg);
+ }
+@@ -60,7 +61,7 @@ static int pca_isa_readbyte(void *pd, int reg)
+ #ifdef DEBUG_IO
+ 	{
+ 		static char *names[] = { "STA", "DAT", "ADR", "CON" };
+-		printk("*** read  %s => %#04x\n", names[reg], res);
++		printk(KERN_DEBUG "*** read  %s => %#04x\n", names[reg], res);
+ 	}
+ #endif
+ 	return res;
+diff --git a/drivers/i2c/busses/i2c-powermac.c b/drivers/i2c/busses/i2c-powermac.c
+index 60ca917..3c9d71f 100644
+--- a/drivers/i2c/busses/i2c-powermac.c
++++ b/drivers/i2c/busses/i2c-powermac.c
+@@ -191,7 +191,8 @@ static int __devexit i2c_powermac_remove(struct platform_device *dev)
+ 	i2c_set_adapdata(adapter, NULL);
+ 	/* We aren't that prepared to deal with this... */
+ 	if (rc)
+-		printk("i2c-powermac.c: Failed to remove bus %s !\n",
++		printk(KERN_WARNING
++		       "i2c-powermac.c: Failed to remove bus %s !\n",
+ 		       adapter->name);
+ 	platform_set_drvdata(dev, NULL);
+ 	kfree(adapter);
+diff --git a/drivers/i2c/busses/i2c-pxa.c b/drivers/i2c/busses/i2c-pxa.c
+index bdb1f75..c1405c8 100644
+--- a/drivers/i2c/busses/i2c-pxa.c
++++ b/drivers/i2c/busses/i2c-pxa.c
+@@ -210,11 +210,12 @@ static irqreturn_t i2c_pxa_handler(int this_irq, void *dev_id);
+ static void i2c_pxa_scream_blue_murder(struct pxa_i2c *i2c, const char *why)
+ {
+ 	unsigned int i;
+-	printk("i2c: error: %s\n", why);
+-	printk("i2c: msg_num: %d msg_idx: %d msg_ptr: %d\n",
++	printk(KERN_ERR "i2c: error: %s\n", why);
++	printk(KERN_ERR "i2c: msg_num: %d msg_idx: %d msg_ptr: %d\n",
+ 		i2c->msg_num, i2c->msg_idx, i2c->msg_ptr);
+-	printk("i2c: ICR: %08x ISR: %08x\n"
+-	       "i2c: log: ", readl(_ICR(i2c)), readl(_ISR(i2c)));
++	printk(KERN_ERR "i2c: ICR: %08x ISR: %08x\n",
++	       readl(_ICR(i2c)), readl(_ISR(i2c)));
++	printk(KERN_DEBUG "i2c: log: ");
+ 	for (i = 0; i < i2c->irqlogidx; i++)
+ 		printk("[%08x:%08x] ", i2c->isrlog[i], i2c->icrlog[i]);
+ 	printk("\n");
+-- 
+1.6.1.3
+
