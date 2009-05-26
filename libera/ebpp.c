@@ -1048,14 +1048,15 @@ libera_dd_llseek_specific(struct file *file, loff_t time, int whence)
 /** Atomic helper for libera_OB_fifo_sync() */
 inline int dma_no_data(unsigned long *obFIFOstatus) {
     int ret;
+    unsigned long flags;
     libera_dma_t *dma = &lgbl.dma;
     
     /* (dma->remaining) &&
        !(DD_OB_SIZE(*obFIFOstatus)) && !dma->Overrun */
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     ret = ( (dma->remaining) &&
             !(DD_OB_SIZE(*obFIFOstatus)) && !dma->Overrun );
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
     
     return ret;
 }
@@ -1099,9 +1100,10 @@ static inline ssize_t libera_OB_fifo_sync(unsigned long *obFIFOstatus)
          *       Let's do it anyway, just to be on the safe side.
          */
         if (DD_OB_OVERRUN(*obFIFOstatus)) {
-            spin_lock(&dma_spin_lock);
+            unsigned long flags;
+            local_irq_save(flags);
             dma->Overrun = TRUE;
-            spin_unlock(&dma_spin_lock);
+            local_irq_restore(flags);
             PDEBUG("Overrun: OB_status = 0x%08lx in fifo sync.\n", dma->obFIFOstatus);
             /* NOTE: The OVERRUN bit is set when the CB-PUT and
              *       CB-GET pointers point to the same PAGE.
@@ -1114,13 +1116,14 @@ static inline ssize_t libera_OB_fifo_sync(unsigned long *obFIFOstatus)
              */
         }
         if ( wait_count++ > HZ) {
-            spin_lock(&dma_spin_lock);
+            unsigned long flags;
+            local_irq_save(flags);
             PDEBUG("DD: Timeout waiting for OB-fifo data.\n");
             PDEBUG("dma->remaining = %ld , OB_status = %lu\n",
                     dma->remaining, *obFIFOstatus);
             PDEBUG("Error in file: %s, line: %d)\n", 
                    __FILE__, __LINE__);
-            spin_unlock(&dma_spin_lock);
+            local_irq_restore(flags);
             return -EIO;
         }
     }
@@ -1275,10 +1278,11 @@ wait_lst(libera_Ltimestamp_t *ctime,
 inline int dma_needs_start(void) {
     libera_dma_t *dma = &lgbl.dma;
     int ret;
-    
-    spin_lock(&dma_spin_lock);
+    unsigned long flags;
+
+    local_irq_save(flags);
     ret = (!dma->DMAC_transfer) && (dma->remaining);
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
     
     return ret;
 }
@@ -1307,11 +1311,12 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     register unsigned long i;
     ssize_t sync_ret;
     int ret = 0;
+    unsigned long flags;
 
     DEBUG_ONLY(int sleep_count = 0);
     DEBUG2_ONLY(int dma_while_count = 0);
 
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
 
     /* Get status */
     dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
@@ -1328,7 +1333,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     flushDMA_FIFO(dma);
     libera_dma_get_DMAC_csize(dma);
                     
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
 
     /* NOTE: OB-fifo size should be > 0 here, otherwise we would not get 
      *       DD interrupt, however, this does not guarantee that 
@@ -1340,12 +1345,12 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     sync_ret = libera_OB_fifo_sync(&dma->obFIFOstatus);
     if ( sync_ret < 0 ) return sync_ret;
     // TODO: LIBERA_IOBASE is not configurable !!!
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     libera_dma_get_DMAC_csize(dma);
     libera_dma_command((LIBERA_IOBASE + DD_OB_FIFOBASE),
                        &dma->buf[dma->put],
                        dma->csize*sizeof(libera_atom_dd_t));
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
 
     /* Loop until the DMA transfer is over */
     do {
@@ -1437,9 +1442,9 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
                             userbuf += sizeof(libera_atom_dd_t);
                         }
                     }
-                    spin_lock(&dma_spin_lock);
+                    local_irq_save(flags);
                     dma->get = (dma->get + 1) & LIBERA_DMA_FIFO_MASK;
-                    spin_unlock(&dma_spin_lock);
+                    local_irq_restore(flags);
                 }
                 PDEBUG3("Copied %lu atoms to Userland.\n", i);
             }
@@ -1454,9 +1459,9 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
                         dma->written++;
                         buf += sizeof(libera_atom_dd_t);
                     }
-                    spin_lock(&dma_spin_lock);
+                    local_irq_save(flags);
                     dma->get = (dma->get + 1) & LIBERA_DMA_FIFO_MASK;
-                    spin_unlock(&dma_spin_lock);
+                    local_irq_restore(flags);
                 }
                 PDEBUG3("Copied %lu atoms to kernel buffer.\n", i);
             }
@@ -1489,7 +1494,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
         /* Start DMA again if needed */
         /* (!dma->DMAC_transfer) && (dma->remaining)*/
         if ( dma_needs_start() ) {
-            spin_lock(&dma_spin_lock);
+            local_irq_save(flags);
             /* Refresh status */
             dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
                 
@@ -1507,13 +1512,13 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
                  *       synchronization in FPGA.
                  */
             }
-            spin_unlock(&dma_spin_lock);
+            local_irq_restore(flags);
 
             /* Reading speed sync */
             sync_ret = libera_OB_fifo_sync(&dma->obFIFOstatus);
             if ( sync_ret < 0 ) return sync_ret;
 
-            spin_lock(&dma_spin_lock);
+            local_irq_save(flags);
 
             libera_dma_get_DMAC_csize(dma);
             
@@ -1524,7 +1529,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
              */     
             if (!(dma->csize > 0)) {
                 if  ( (LIBERA_DMA_FIFO_ATOMS - 1 - lenDMA_FIFO(dma)) == 0) {
-                    spin_unlock(&dma_spin_lock);
+                    local_irq_restore(flags);
                     continue;
                 }
             }
@@ -1563,10 +1568,10 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
                                    dma->csize*sizeof(libera_atom_dd_t));
             } else {
               /* Stop the DMA transfer in case of overrrun */
-                spin_unlock(&dma_spin_lock);
+                local_irq_restore(flags);
                 break;
             }
-            spin_unlock(&dma_spin_lock);
+            local_irq_restore(flags);
         }
 
         // NOTE: This will only work for small read() requests.
@@ -1586,7 +1591,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     /* End of DMA transfer
      * Check for OB_size inconsistency.
      */
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     dma->obFIFOstatus = readl(iobase + DD_OB_STATUS);
     PDEBUG2("End of DMA transfer: OB_status = 0x%lx, OB_size = 0x%lx\n",
             dma->obFIFOstatus,
@@ -1601,7 +1606,7 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
         /* NOTE: Emptying OB-fifo for future DD requests is not
          *       necessary since OB_SIZE is reset upon every CB_FIFO request.
          */
-        spin_unlock(&dma_spin_lock);
+        local_irq_restore(flags);
         return -EIO;
     }
 
@@ -1611,13 +1616,13 @@ libera_dd_transfer_OBfifo_DMA(char *userbuf,
     {
         PDEBUG("DD read(): FPGA size inconsistency: %d : %lu\n",
                atom_count, OBAtoms);
-        spin_unlock(&dma_spin_lock);
+        local_irq_restore(flags);
         return -EFAULT;
     }
 
     DEBUG_ONLY(if (dma->Overrun) PDEBUG("Circular buffer OVERRUN!\n"));    
 
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
     return dma->written;
 }
 

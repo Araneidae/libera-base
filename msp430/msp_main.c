@@ -33,17 +33,19 @@
 
 #include <asm/uaccess.h>
 #include <linux/delay.h>
+#include <linux/sched.h>
 
 #include <linux/fs.h>
 #include <linux/ioport.h>
 
-#include <asm/hardware.h>
+#include <mach/hardware.h>
 #include <asm/io.h>
-#include <asm/arch/system.h>
-#include <asm/arch/regs-ssp.h>
-#include <asm/arch/pxa2xx-gpio.h>
+#include <mach/system.h>
+#include <mach/regs-ssp.h>
+#include <mach/mfp-pxa25x.h>
 
-#include <asm/arch/ssp.h>
+#include <mach/ssp.h>
+
 
 
 /** MSP GNU/Linux driver version */
@@ -85,6 +87,7 @@ MODULE_AUTHOR("Ales Bardorfer, Instrumentation Technologies");
 MODULE_DESCRIPTION("Instrumentation Technologies MSP driver for Libera");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("msp");
+MODULE_VERSION("DLS 0.1-dev");
 
 
 
@@ -137,7 +140,7 @@ static void * msp_reset_register;
  * about 5ms in general, but is a *lot* faster than calling mdelay(1)! */
 static void msp_delay_jiffies(int delay_jiff)
 {
-    set_current_state(TASK_UNINTERRUPTIBLE);
+    __set_current_state(TASK_UNINTERRUPTIBLE);
     schedule_timeout(delay_jiff);
 }
 
@@ -180,7 +183,7 @@ static void msp_transform(
  * we access the device directly as that driver's functionality is somewhat
  * broken. */
 #define SSP_WRITE(reg, value) __raw_writel(value, ssp.ssp->mmio_base + reg)
-#define SSP_READ(reg) __raw_readl(ssp.ssp->mmio_base + reg)
+#define SSP_READ(reg)         __raw_readl(ssp.ssp->mmio_base + reg)
 
 /* Exchange one word over SSP.
  * 
@@ -280,6 +283,13 @@ static ssize_t msp_transfer(char *buf)
 }
 
 
+static mfp_cfg_t ssp_pin_config[] __initdata = {
+    GPIO23_SSP1_SCLK,
+    GPIO24_SSP1_SFRM,
+    GPIO25_SSP1_TXD,
+    GPIO26_SSP1_RXD,
+    GPIO27_SSP1_EXTCLK
+};
 
 
 /* This initialises the MSP hardware resources.  These comprise:
@@ -318,11 +328,7 @@ static int initialise_msp(void)
     /* Enable the SSP clock. */
     CKEN |= CKEN_SSP;
     /* Configure all of the SSP GPIOs. */
-    pxa_gpio_mode(GPIO23_SCLK_MD);
-    pxa_gpio_mode(GPIO24_SFRM_MD);
-    pxa_gpio_mode(GPIO25_STXD_MD);
-    pxa_gpio_mode(GPIO26_SRXD_MD);
-    pxa_gpio_mode(GPIO27_SEXTCLK_MD);
+    pxa2xx_mfp_config(ssp_pin_config, ARRAY_SIZE(ssp_pin_config));
 
     /* Configure the SSP to talk to the MSP. */
     ssp_disable(&ssp);
@@ -462,7 +468,7 @@ static int __init msp_init(void)
         goto no_class;
     }
     struct device * msp_device =
-        device_create(msp_class, NULL, msp_dev, "msp0");
+        device_create(msp_class, NULL, msp_dev, NULL, "msp0");
     if (IS_ERR(msp_device))
     {
         ret = PTR_ERR(msp_device);

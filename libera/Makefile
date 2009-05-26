@@ -6,20 +6,27 @@ include $(TOP)/scripts/COMMON
 # need to point to the kernel build tree which this is.
 KBUILD_OUTPUT = $(BUILD_ROOT)/kernel
 
+O = $(BUILD_ROOT)/libera
+
 
 export CROSS_COMPILE
 #export KBUILD_OUTPUT = $(O)
 export ARCH = arm
 
 
-default:
+$(O):
+	mkdir $(O)
+	ln -fs $(wildcard $(patsubst %,$(CURDIR)/%, *.[c,h] Kbuild)) $(O)
+
+default: $(O)
 #	make -C $(O) M=$(CURDIR) ARCH=arm O=$(O) KBUILD_OUTPUT=$(O)
-	make -C $(KBUILD_OUTPUT) M=$(CURDIR)
-	cp libera.ko /home/libera/nfs/testing
+	make -C $(KBUILD_OUTPUT) M=$(O)
+	cp $(O)/libera.ko /home/libera/nfs/testing
 
 clean:
-	rm -f *.o *.ko .*.cmd *.mod.c *.symvers
-	rm -rf .tmp_versions
+	rm -rf $(O)
+# 	rm -f *.o *.ko .*.cmd *.mod.c *.symvers
+# 	rm -rf .tmp_versions
 
 
 install:

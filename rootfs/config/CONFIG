@@ -1,5 +1,7 @@
 # Definitions for Libera rootfs.
 
+ROOTFS_VERSION = DLS development 0.00
+
 CONSOLE_BAUD = 115200
 CONSOLE_TTY = ttyS0
 
@@ -19,10 +21,16 @@ EXTRAS += busybox
 EXTRAS += ntp dropbear portmap
 # Useful debugging tools
 EXTRAS += strace lsof
+# tcpdump
+EXTRAS += libpcap tcpdump
 
 
-# Temporary and dirty module hack.
-LIB_MODULES = $(sysroot)/lib/modules/2.6.20.14
+# Temporary and dirty module hack.  
+#  1. LINUX_VERSION should be shared with kernel build
+#  2. This ought to be a rootfs option
+LINUX_VERSION = 2.6.26.8
+LIB_MODULES = $(sysroot)/lib/modules/$(LINUX_VERSION)
+
 
 final-install::
         # Install the regular nfs mounts.
@@ -33,11 +41,12 @@ final-install::
 	mkdir -p $(LIB_MODULES)
 	cp $(LIBERA_BASE)/libera/libera.ko $(LIBERA_BASE)/msp430/msp.ko \
             $(LIB_MODULES)
-	echo /lib/modules/2.6.20.14/libera.ko: >>$(LIB_MODULES)/modules.dep
-	echo /lib/modules/2.6.20.14/msp.ko: >>$(LIB_MODULES)/modules.dep
+	echo /lib/modules/$(LINUX_VERSION)/libera.ko: \
+            >>$(LIB_MODULES)/modules.dep
+	echo /lib/modules/$(LINUX_VERSION)/msp.ko: \
+            >>$(LIB_MODULES)/modules.dep
 
 	$(install-files) $(TOP)/libera/file-list
-	$(startup) $(TOP)/libera/make-libera-dev S250
 
 
 ifdef DEVELOPMENT

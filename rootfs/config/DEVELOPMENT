@@ -2,11 +2,16 @@
 
 DROPBEAR_KEYS = y
 
-# Network configuration
 BOOT = nfs
 NETWORK = nfs
-NW_HOSTNAME = TS-DI-EBPM-20
-NW_ADDRESS = 172.23.252.20
+
+# BOOT = initramfs
+# IMAGE_ADDR = a2000000
+# NETWORK = network
+
+# Network configuration
+NW_HOSTNAME = TS-DI-EBPM-01
+NW_ADDRESS = 172.23.252.1
 NW_NETMASK = 255.255.240.0
 NW_GATEWAY = 172.23.240.254
 

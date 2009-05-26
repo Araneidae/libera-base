@@ -36,11 +36,14 @@ or visit http://www.gnu.org
 
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <asm/arch/system.h>
+#include <mach/system.h>
+// #include <asm/irq.h>
+// #include <asm/dma.h>
+// #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/dma.h>
-#include <asm/io.h>
-#include <asm/irq.h>
+#include <mach/dma.h>
+#include <mach/io.h>
+#include <mach/pxa2xx-gpio.h>
 
 #include "libera_kernel.h"
 #include "libera_event.h"
@@ -194,6 +197,7 @@ MODULE_AUTHOR("Ales Bardorfer, Instrumentation Technologies");
 MODULE_DESCRIPTION("Instrumentation Technologies Libera driver");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("libera");
+MODULE_VERSION("DLS 0.1-dev");
 
 module_param(iobase, long, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC (iobase, "I/O memory region base address (default 0x1400000)");
@@ -1136,9 +1140,7 @@ libera_dma_interrupt(int irq, void *dev_id)
     struct libera_dd_device  *dd  = &libera_dd;
     libera_dma_t *dma = &lgbl.dma;
     unsigned long dcsr = DCSR(dma->chan);
-    unsigned long flags;
 
-    spin_lock_irqsave(&dma_spin_lock, flags);
     /* End interrupt */
     if (dcsr & DCSR_ENDINTR) {
         /* Acknowledge interrupt */
@@ -1204,10 +1206,6 @@ libera_dma_interrupt(int irq, void *dev_id)
         PDEBUG3("libera: DMA irq: Start interrupt.\n");
         DCSR(dma->chan) |= DCSR_STARTINTR;
     }
-
-    spin_unlock_irqrestore(&dma_spin_lock, flags);
-
-    return;
 }
 
 
@@ -1407,7 +1405,8 @@ static int __init install_devices(void)
     for (minor = 0; minor < dev_count; minor ++)
     {
         struct device * device = device_create(
-            libera_class, NULL, MKDEV(major, minor), device_names[minor]);
+            libera_class, NULL,
+            MKDEV(major, minor), NULL, device_names[minor]);
         if (IS_ERR(device))
         {
             ret = PTR_ERR(device);

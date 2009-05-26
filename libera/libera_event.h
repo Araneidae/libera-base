@@ -126,40 +126,44 @@ static inline void flushDMA_FIFO(libera_dma_t *q)
 static inline int lenDMA_FIFO(libera_dma_t *q)
 {
     int ret;
+    unsigned long flags;
 
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     ret = ( (q->put + LIBERA_DMA_FIFO_ATOMS - q->get) & LIBERA_DMA_FIFO_MASK );
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
 
     return ret;
 }
 static inline int tailDMA_FIFO(libera_dma_t *q)
 {
     int ret;
+    unsigned long flags;
 
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     ret = ( LIBERA_DMA_FIFO_ATOMS - q->put );
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
 
     return ret;
 }
 static inline int not_emptyDMA_FIFO(libera_dma_t *q)
 {
     int ret;
+    unsigned long flags;
     
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     ret = (q->put != q->get);
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
 
     return ret;
 }
 static inline int emptyDMA_FIFO(libera_dma_t *q)
 {
     int ret;
+    unsigned long flags;
 
-    spin_lock(&dma_spin_lock);
+    local_irq_save(flags);
     ret = (q->put == q->get);
-    spin_unlock(&dma_spin_lock);
+    local_irq_restore(flags);
 
     return ret;
 }

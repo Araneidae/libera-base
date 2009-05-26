@@ -1,14 +1,12 @@
-# DRIVER = libera.ko
-SRCS = libera_main.c libera_cfg.c libera_dd.c libera_adc.c \
-       libera_fa.c libera_sa.c libera_pm.c libera_event.c libera_dsc.c \
-       ebpp.c
-
-OBJS = $(SRCS:%.c=%.o)
-
 EXTRA_CFLAGS += -DEBPP -DDEBUG=0
+
 # EXTRA_CFLAGS += -O2 -Werror -Wextra
-# EXTRA_CFLAGS += -Wno-declaration-after-statement -Wno-unused-parameter
+EXTRA_CFLAGS += -Wno-declaration-after-statement -Wno-unused-parameter
 # EXTRA_CFLAGS += -Wno-missing-field-initializers
+
+OBJS = libera_main.o libera_cfg.o libera_dd.o libera_adc.o \
+       libera_fa.o libera_sa.o libera_pm.o libera_event.o libera_dsc.o \
+       ebpp.o
 
 obj-m := libera.o
 libera-objs := $(OBJS)
