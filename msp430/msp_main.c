@@ -1,13 +1,16 @@
-/* This file is part of the MSP device driver for Libera
- * Copyright (C) 2004-2006 Instrumentation Technologies
+/* This file implements the MSP device driver for Libera
+ * 
  * Copyright (C) 2009  Michael Abbott, Diamond Light Source Ltd.
+ *
+ * Based on MSP device driver:
+ * Copyright (C) 2004-2006 Instrumentation Technologies
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 2 of the License, or (at your option)
  * any later version.
  *
- * The Libera EPICS Driver is distributed in the hope that it will be useful,
+ * The MSP device driver is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
  * Public License for more details.
@@ -188,8 +191,8 @@ static void msp_transform(
 /* Exchange one word over SSP.
  * 
  * Communication over SSP is rather curious: characters are transmitted
- * synchronously and simultaneously in both directions when initiate a
- * transfer by writing to SSDR, so in effect each communication is an
+ * synchronously and simultaneously in both directions when a transfer is
+ * initiated by writing to SSDR, so in effect each communication is an
  * exchange of bytes.
  *     This means, in particular, that the reply we get is actually the reply
  * to the last command we sent, not this one.  Unfortunately it also means
