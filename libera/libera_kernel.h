@@ -1,4 +1,4 @@
-/* $Id: libera_kernel.h 2361 2008-12-12 12:26:13Z tomazb $ */
+/* $Id: libera_kernel.h 2454 2009-03-04 14:47:44Z tomaz.beltram $ */
 
 /** \file libera_kernel.h */
 /** Driver kernel interface for GNU/Linux Libera driver. */
@@ -246,7 +246,6 @@ typedef struct
 #define FAI_SW_STATUS        0x14024    + FAI_OFFSET
 #define FAI_COUNTER_RESET    0x14028    + FAI_OFFSET
 #define FAI_PLL_STATUS_MASK  0x00000003UL
-
 
 /* DSC defines */
 #define DSC_BLOCK            0x0  + ADC_OFFSET

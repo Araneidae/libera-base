@@ -1,4 +1,4 @@
-/* $Id: ebpp.c 2361 2008-12-12 12:26:13Z tomazb $ */
+/* $Id: ebpp.c 2425 2009-02-12 14:58:56Z tomazb $ */
 
 /** \file ebpp.c */
 /** Implements Libera Electron Beam Position Processor (EBPP) specifics. */
@@ -147,6 +147,7 @@ libera_cfg_get_specific(struct libera_cfg_device *dev,
     case LIBERA_CFG_ILK_GAIN_LIMIT:
     case LIBERA_CFG_ILKSTATUS:
     case LIBERA_CFG_PMOFFSET:
+    case LIBERA_CFG_PMDEC:
     case LIBERA_CFG_EXTSWITCH:
     case LIBERA_CFG_SWDELAY:
     case LIBERA_CFG_TRIGDELAY:
@@ -335,6 +336,11 @@ libera_cfg_set_specific(struct libera_cfg_device *dev,
 
     case LIBERA_CFG_PMOFFSET:
       PDEBUG("Set Post Mortem Offset: %d\n", req->val);
+      dev->param[req->idx] = req->val;
+      break;
+
+    case LIBERA_CFG_PMDEC:
+      PDEBUG("Set Post Mortem Decimation: %d\n", req->val);
       dev->param[req->idx] = req->val;
       break;
 
@@ -599,6 +605,8 @@ int libera_init_specific(void)
     // fix for bug 157,380
     readl(iobase + ADC_MAX);
 
+    dev_cfg->param[LIBERA_CFG_PMDEC] = 1;
+
     dev_cfg->param[LIBERA_CFG_PM_XLOW] = (unsigned int)(-1000000L);
     dev_cfg->param[LIBERA_CFG_PM_XHIGH] = 1e6;
     dev_cfg->param[LIBERA_CFG_PM_YLOW] = (unsigned int)(-1000000L);
@@ -606,12 +614,12 @@ int libera_init_specific(void)
     dev_cfg->param[LIBERA_CFG_PM_OVERFLOW_LIMIT] = ilk_adc;
     dev_cfg->param[LIBERA_CFG_PM_OVERFLOW_DUR] = 5;
 
-    dev_cfg->param[LIBERA_CFG_SR_ENABLE] = 1;
+    dev_cfg->param[LIBERA_CFG_SR_ENABLE] = readl(iobase + FA_ENABLE);
     dev_cfg->param[LIBERA_CFG_SR_CSPI_ENABLE] = 1;
-    dev_cfg->param[LIBERA_CFG_SR_AVERAGING_STOP] = -1;
-    dev_cfg->param[LIBERA_CFG_SR_AVERAGE_WINDOW] = 8;
-    dev_cfg->param[LIBERA_CFG_SR_START] = -3;
-    dev_cfg->param[LIBERA_CFG_SR_WINDOW] = 8;
+    dev_cfg->param[LIBERA_CFG_SR_AVERAGING_STOP] = readl(iobase + FA_AVE_STOP);
+    dev_cfg->param[LIBERA_CFG_SR_AVERAGE_WINDOW] = readl(iobase + FA_AVE_WIN);
+    dev_cfg->param[LIBERA_CFG_SR_START] = readl(iobase + FA_START);
+    dev_cfg->param[LIBERA_CFG_SR_WINDOW] = readl(iobase + FA_WINDOW);
 
     if (LIBERA_IS_BRILLIANCE(lgbl.feature))
         dev_cfg->param[LIBERA_CFG_SP_THRESHOLD] = 400;
@@ -1897,6 +1905,7 @@ libera_acq_pm(void)
     PDEBUG3("LMTstart   = 0x%08lx%08lx\n", ULL(LMTstart));
     PDEBUG3("PM_offset  = 0x%08lx\n", cfg->param[LIBERA_CFG_PMOFFSET]);
     PDEBUG3("pmsize     = 0x%08lx\n", pmsize);
+    PDEBUG3("decimation = 0x%08lx\n", cfg->param[LIBERA_CFG_PMDEC]);
 
     /* Is it too late? */
     ret = libera_get_CTIME(&ctime);
@@ -1910,7 +1919,7 @@ libera_acq_pm(void)
     PDEBUG("PM: Acquiring into PM buffer...\n");
     /* Write command to CB fifo (initiate data transfer) */
     ret = libera_dd_write_CBfifo(get_circ_offset_lmt(&LMTstart), 
-                                 pmsize, 1);
+                                 pmsize, cfg->param[LIBERA_CFG_PMDEC]);
     if (ret < 0) {
         PDEBUG("PM: Error writing to CB FIFO (%d).\n", ret);
         goto out;

@@ -28,7 +28,7 @@ EXTRAS += libpcap tcpdump
 # Temporary and dirty module hack.  
 #  1. LINUX_VERSION should be shared with kernel build
 #  2. This ought to be a rootfs option
-LINUX_VERSION = 2.6.26.8
+LINUX_VERSION = 2.6.29.3-dls
 LIB_MODULES = $(sysroot)/lib/modules/$(LINUX_VERSION)
 
 
@@ -39,7 +39,7 @@ final-install::
 
         # Temporary hacks
 	mkdir -p $(LIB_MODULES)
-	cp $(LIBERA_BASE)/libera/libera.ko $(LIBERA_BASE)/msp430/msp.ko \
+	cp $(LIBERA_ROOT)/libera/libera.ko $(LIBERA_ROOT)/msp/msp.ko \
             $(LIB_MODULES)
 	echo /lib/modules/$(LINUX_VERSION)/libera.ko: \
             >>$(LIB_MODULES)/modules.dep

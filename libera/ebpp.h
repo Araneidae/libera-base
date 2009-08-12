@@ -1,4 +1,4 @@
-/* $Id: ebpp.h 2322 2008-11-28 10:23:17Z tomazb $ */
+/* $Id: ebpp.h 2425 2009-02-12 14:58:56Z tomazb $ */
 
 /** \file ebpp.h */
 /** Public include file for Libera Electron Beam Position Processor (EBPP). */
@@ -68,6 +68,7 @@ typedef enum {
     LIBERA_CFG_DSC,
     LIBERA_CFG_ILKSTATUS,
     LIBERA_CFG_PMOFFSET,
+    LIBERA_CFG_PMDEC,
     LIBERA_CFG_EXTSWITCH,
     LIBERA_CFG_SWDELAY,
     LIBERA_CFG_DFA,

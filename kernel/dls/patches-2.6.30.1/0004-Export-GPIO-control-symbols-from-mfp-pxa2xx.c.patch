@@ -1,0 +1,29 @@
+From 4c61ea9f76b6c1238a08ec92319f59ba0c197747 Mon Sep 17 00:00:00 2001
+From: Michael Abbott <michael.abbott@diamond.ac.uk>
+Date: Wed, 6 May 2009 12:47:22 +0100
+Subject: [PATCH 4/6] Export GPIO control symbols from mfp-pxa2xx.c
+
+This allows modules to configure their own GPIO settings if this hasn't
+been done at the board level.
+
+Signed-off-by: Michael Abbott <michael.abbott@diamond.ac.uk>
+---
+ arch/arm/mach-pxa/mfp-pxa2xx.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-pxa/mfp-pxa2xx.c b/arch/arm/mach-pxa/mfp-pxa2xx.c
+index cf6b720..9f9785b 100644
+--- a/arch/arm/mach-pxa/mfp-pxa2xx.c
++++ b/arch/arm/mach-pxa/mfp-pxa2xx.c
+@@ -387,3 +387,8 @@ static int __init pxa2xx_mfp_init(void)
+ 	return sysdev_class_register(&pxa2xx_mfp_sysclass);
+ }
+ postcore_initcall(pxa2xx_mfp_init);
++
++
++EXPORT_SYMBOL(pxa2xx_mfp_config);
++EXPORT_SYMBOL(pxa2xx_mfp_set_lpm);
++EXPORT_SYMBOL(gpio_set_wake);
+-- 
+1.6.1.3
+
