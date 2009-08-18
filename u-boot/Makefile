@@ -14,8 +14,8 @@ PADFF = $(O.native)/padff
 
 
 default: $(PADFF)
-	rm -rf $@
-	mkdir -p $@
+	rm -rf $(TARGET_DIR)
+	mkdir -p $(TARGET_DIR)
 	cp update-u-boot $(TARGET_DIR)
 	make -C mtd-rw install TARGET_DIR=$(TARGET_DIR)
 	make -C tools  install TARGET_DIR=$(TARGET_DIR)

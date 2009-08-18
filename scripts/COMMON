@@ -1,7 +1,6 @@
 # Libera Base common definitions
 
 include $(TOP)/CONFIG
--include $(TOP)/CONFIG.local
 
 CROSS_COMPILE = $(BINUTILS_DIR)/bin/$(COMPILER_PREFIX)-
 

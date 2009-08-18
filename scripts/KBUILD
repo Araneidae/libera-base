@@ -1,0 +1,30 @@
+# Makefile for kernel builds.
+
+
+include $(TOP)/scripts/COMMON
+
+export CROSS_COMPILE
+export ARCH = arm
+
+# This is where the kernel was built.
+KBUILD_OUTPUT = $(BUILD_ROOT)/kernel
+
+
+default:
+
+$(O):
+	mkdir -p $(O)
+	ln -fs $(wildcard $(patsubst %,$(CURDIR)/%, *.[c,h] $(MAKEFILE))) $(O)
+
+default: $(O)
+	make -C $(KBUILD_OUTPUT) M=$(O)
+
+install:
+	cp $(patsubst %,$(O)/%,$(TARGETS)) $(TARGET_DIR)
+
+# install:
+# 	make -C $(KBUILD_OUTPUT) M=$(CURDIR) \
+#             INSTALL_MOD_PATH=$(CURDIR)/testing modules_install V=1
+
+clean:
+	rm -rf $(O)
