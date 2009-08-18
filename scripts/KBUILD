@@ -6,8 +6,12 @@ include $(TOP)/scripts/COMMON
 export CROSS_COMPILE
 export ARCH = arm
 
-# This is where the kernel was built.
-KBUILD_OUTPUT = $(BUILD_ROOT)/kernel
+# The kernel will have been built using the kernel build tool.  Ask it kindly
+# where it put the build; we need this for module builds!
+KBUILD_OUTPUT = $(shell \
+    make -s -C $(KERNEL_BUILD) TARGET=libera-2.6 print-build-dir)
+
+TARGET_DIR ?= /home/libera/nfs/testing
 
 
 default:

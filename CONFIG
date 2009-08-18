@@ -3,6 +3,8 @@ BUILD_ROOT = /scratch/tmp/libera-base
 BINUTILS_DIR = /dls_sw/targetOS/x-tools/$(TOOLCHAIN_VERSION)/$(COMPILER_PREFIX)
 TAR_DIRS = /dls_sw/prod/targetOS/tar-files /dls_sw/work/targetOS/tar-files
 
+KERNEL_BUILD = $(TOP)/../kernel
+
 # ROOTFS = /home/mga83/targetOS/rootfs
 # KERNEL_CONFIG = i-tech
 # KERNEL_CONFIG = dls
