@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define MAX_LINE 1024       // Random limit
 
@@ -19,7 +20,8 @@ extern unsigned long crc32 (
 
 static inline void Fail(const char *message, ...)
 {
-    perror("ooops");
+    if (errno)
+        perror("ooops");
     va_list args;
     va_start(args, message);
     vfprintf(stderr, message, args);

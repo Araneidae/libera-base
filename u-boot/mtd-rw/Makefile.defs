@@ -1,0 +1,8 @@
+TARGETS = mtd-rw.ko
+
+# Special flags for building linux 2.4 kernel module.  We pick up the linux
+# version from the current directory.
+CPPFLAGS += -D__KERNEL__ -DMODULE -DLINUX -I$(CURDIR)
+
+$(TARGETS): %.ko: %.o 
+	$(LD) -r -o $@ $^

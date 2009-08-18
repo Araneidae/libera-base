@@ -1,47 +1,26 @@
 # Libera Base common definitions
 
-default:
-
 include $(TOP)/CONFIG
-
 -include $(TOP)/CONFIG.local
 
-# This definition is used to make the make file build out of tree.  A
-# makefile using this syntax should be constructed thus:
-#
-#   TOP = $(CURDIR)/..                  # or whatever the path is
-#   include $(TOP)/scripts/COMMON       # This file
-#   COMPONENT = target                  # Name of component being built
-#   ifndef O
-#   $(eval $(REFLECT_makefile))
-#   else
-#   ...                                 # Rest of make file goes here.
-#   endif
-#
-# The underlying technique here of turning the makefile around is lifted from
-# busybox.  Unfortunately without this trick make doesn't understand out of
-# tree builds.
-define REFLECT_makefile
-O = $$(BUILD_TARGET)
-$$(O):
-	mkdir -p $$(O)
-
-default $$(MAKECMDGOALS): $$(O)
-	make -C $$(O) -f $$(CURDIR)/Makefile \
-            VPATH=$$(CURDIR) O=$$(O) CURDIR=$$(CURDIR) $$@
-.PHONY: $$(MAKECMDGOALS)
-endef
-
-BUILD_TARGET = $(BUILD_ROOT)/$(COMPONENT)
-SOURCE_ROOT = $(BUILD_ROOT)/src
-
-
-
 CROSS_COMPILE = $(BINUTILS_DIR)/bin/$(COMPILER_PREFIX)-
-CC = $(CROSS_COMPILE)gcc
+
+include $(TOP)/scripts/COMPILER.$(COMPILER)
+
+
+AS      = $(CROSS_COMPILE)as
+LD      = $(CROSS_COMPILE)ld
+CC      = $(CROSS_COMPILE)gcc
+AR      = $(CROSS_COMPILE)ar
+NM      = $(CROSS_COMPILE)nm
+STRIP   = $(CROSS_COMPILE)strip
+OBJCOPY = $(CROSS_COMPILE)objcopy
+OBJDUMP = $(CROSS_COMPILE)objdump
+CPP     = $(CC) -E
 
 CFLAGS += -std=gnu99
-CFLAGS += -Werror -Wall -Wextra -Wno-unused-parameter
+CFLAGS += -Werror -Wall
+CFLAGS += -O2
 
 # Export helper
 EXPORT = $(foreach var,$(1),$(var)='$($(var))')

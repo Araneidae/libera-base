@@ -1,0 +1,134 @@
+#!/bin/sh
+
+# Script to update u-boot on Libera
+
+HERE="$(dirname "$0")"
+U_BOOT_IMAGE="$HERE/u-boot.bin"
+
+
+Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+# Compares image in memory with given file (length of 0x40000 is assumed)
+#
+#   check_mem <start-address> <file>
+#
+check_mem()
+{
+    "$HERE"/readmem $1 0x40000 |
+    "$HERE"/bindiff "$2"  &&
+    # This last line is a bit absurd.  With Libera 1.46 bash (version 2.05b)
+    # we don't have `set -o pipefail` available, so need to check readmem
+    # separately.
+    [ $PIPESTATUS = 0 ]
+}
+
+
+# Exit cleanup.
+on_exit()
+{
+#    rm -f $NEW_ENV
+    rmmod mtd-rw.ko
+}
+
+
+
+[ "$(uname -m)" = armv5tel ]  ||
+    Error This should be run on Libera
+[ "$(uname -r)" = 2.4.21-rmk1-pxa1-z ]  ||
+    Error This will only work on Libera 1.46!
+
+
+VERBOSE=false
+TIMEOUT=5
+# SERVER_ADDRESS=172.23.240.3
+SERVER_ADDRESS=172.23.194.1
+FORCED=false
+
+ECHO=:
+while getopts 'hvt:s:f' option; do
+    case "$option" in
+    h)  cat <<'EOF'
+Usage: update-u-boot [options]
+    -h      Show this help
+    -v      Verbose mode: comment on every stage
+    -t:     Set boot timeout
+    -s:     Set tftp server address
+    -f      Force update even if u-boot up to date (testing only!)
+EOF
+        exit 0 ;;
+    v)  VERBOSE=true
+        ECHO=echo ;;
+    t)  TIMEOUT="$OPTARG" ;;
+    s)  SERVER_ADDRESS="$OPTARG" ;;
+    f)  FORCED=true ;;
+    *)  Error Invalid option: try -h for help ;;
+    esac
+done
+    
+
+if ! $FORCED; then
+    $ECHO Testing if u-boot already upgraded
+    if "$HERE"/bindiff $($VERBOSE || echo -q) /dev/mtd0 "$U_BOOT_IMAGE"; then
+        $ECHO U-boot already upgraded
+        exit 0
+    fi
+fi
+
+
+$ECHO Updating u-boot environment.
+
+NEW_ENV=/tmp/mtd1.new
+insmod "$HERE"/mtd-rw.ko
+trap on_exit EXIT
+
+
+IP_ADDRESS=$(/sbin/ifconfig eth0 |
+    sed -n '/^eth0/{n;s/^.*inet addr://;s/ .*$//;p;}')
+NET_MASK=$(/sbin/ifconfig eth0 |
+    sed -n '/^eth0/{n;s/^.*Mask://;s/ .*$//;p;}')
+
+BOOT_ARGS="$(cat /proc/cmdline)"
+
+cat <<EOF |
+baudrate=115200
+bootargs=$BOOT_ARGS
+bootcmd=bootm 80000
+bootdelay=$TIMEOUT
+ipaddr=$IP_ADDRESS
+netmask=$NET_MASK
+serverip=$SERVER_ADDRESS
+stdin=serial
+stderr=serial
+stdout=serial
+EOF
+"$HERE"/makeenv 40000 4000 > $NEW_ENV  ||
+    Error Error preparing new u-boot environment
+
+$VERBOSE  &&  { cat $NEW_ENV | "$HERE"/readenv; }
+
+$ECHO Writing updated environment
+cat $NEW_ENV >/dev/mtdblock1  &&
+sync  &&
+$ECHO Checking new u-boot environment  &&
+check_mem 0x40000 $NEW_ENV  ||
+    Error Failed to write new u-boot environment
+
+
+# Ok.  We've done everything we need to do; now it's time to update the
+# u-boot itself.  If this goes wrong we're in trouble!
+$ECHO Writing new u-boot
+cat "$U_BOOT_IMAGE" >/dev/mtdblock0  &&
+sync  &&
+check_mem 0 "$U_BOOT_IMAGE"  ||
+{
+    echo >&2 $'\e[1;31m' !!!WARNING!!!  
+    echo >&2 !!!
+    echo >&2 !!! u-boot on machine $(hostname) is unbootable.
+    echo >&2 !!! $'\e[1;0m'
+    exit 1
+}
+

@@ -9,6 +9,7 @@
 #include <fcntl.h>
 
 #include <mtd/mtd-user.h>
+//#include <mtd/mtd.h>
 
 int main(int argc, char *argv[])
 {

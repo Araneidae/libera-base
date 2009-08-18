@@ -1,0 +1,3 @@
+# For native builds don't cross compile at all!
+CROSS_COMPILE =
+CFLAGS += -Wextra -Wno-unused-parameter

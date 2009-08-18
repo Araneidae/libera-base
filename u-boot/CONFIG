@@ -1,5 +1,0 @@
-U_BOOT_BIN = /dls_sw/targetOS/u-boot/xcep/u-boot.bin
-
-BINUTILS_DIR = /dls_sw/targetOS/x-tools/$(TOOLCHAIN_VERSION)/$(COMPILER_PREFIX)
-TOOLCHAIN_VERSION = gcc-3.4.5-glibc-2.3.6
-COMPILER_PREFIX = arm-linux

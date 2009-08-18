@@ -1,14 +1,7 @@
-TOP = $(CURDIR)/../..
-include $(TOP)/scripts/COMMON
+TOP = ../..
 COMPONENT = u-boot
-ifndef O
-$(eval $(REFLECT_makefile))
-else
 
-default: readmem mtdinfo
+COMPILERS = native linux-arm
+MAKEFILE = Makefile.defs
 
-readmem: readmem.c
-
-mtdinfo: mtdinfo.c
-
-endif
+include $(TOP)/scripts/REFLECT

@@ -1,0 +1,16 @@
+include $(TOP)/scripts/COMMON
+
+default:
+
+INSTALL_COMMAND = cp $^ $(TARGET_DIR)
+
+include $(MAKEFILE)
+
+INSTALL_TARGETS ?= $(TARGETS) $(TARGETS_$(COMPILER))
+
+default: $(TARGETS) $(TARGETS_$(COMPILER))
+
+install: $(INSTALL_TARGETS)
+	$(INSTALL_COMMAND)
+
+.PHONY: default

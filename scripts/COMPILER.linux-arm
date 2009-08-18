@@ -1,0 +1,4 @@
+# ARM cross compiler for Libera 1.46.
+TOOLCHAIN_VERSION = gcc-3.4.5-glibc-2.3.6
+COMPILER_PREFIX = arm-linux
+CFLAGS += -Wextra -Wno-unused-parameter

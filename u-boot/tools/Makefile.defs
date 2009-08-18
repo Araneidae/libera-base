@@ -1,0 +1,6 @@
+TARGETS_linux-arm = readmem bindiff makeenv readenv
+TARGETS_native = padff
+
+INSTALL_TARGETS = $(TARGETS_linux-arm)  # Don't install native 
+
+makeenv: crc32lib.o

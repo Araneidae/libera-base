@@ -1,0 +1,39 @@
+# Makefile script to implement out of tree builds.  The following symbols
+# should have already been defined before this script is included:
+#
+#   TOP         Path to top level directory, needed to discover SCRIPTS
+#               directory.
+#
+#   COMPILERS   List of compilers to target.
+#
+#   MAKEFILE    Makefile to be reflected. 
+#
+#   COMPONENT   Name of component: determines where the build will occur.
+
+include $(TOP)/CONFIG
+
+
+define EXPAND_makefile
+O.$(COMPILER) := $(O)
+
+$$(O.$(COMPILER)):
+	mkdir -p $$(O.$(COMPILER))
+
+clean: clean-$(COMPILER)
+
+clean-$(COMPILER):
+	rm -rf $$(O.$(COMPILER))
+
+default $(filter-out clean,$(MAKECMDGOALS)):: $$(O.$(COMPILER))
+	make -C $$(O.$(COMPILER)) -f $(CURDIR)/$(TOP)/scripts/REFLECTOR \
+            TOP=$(CURDIR)/$(TOP) COMPILER=$(COMPILER) \
+            MAKEFILE=$(CURDIR)/$(MAKEFILE) \
+            VPATH=$(CURDIR) O=$$(O.$(COMPILER)) CURDIR=$(CURDIR) $$@
+
+.PHONY: default $(MAKECMDGOALS) clean clean-$(COMPILER)
+endef
+
+
+default::
+
+$(foreach COMPILER,$(COMPILERS),$(eval $(EXPAND_makefile)))
