@@ -286,15 +286,6 @@ static ssize_t msp_transfer(char *buf)
 }
 
 
-static mfp_cfg_t ssp_pin_config[] __initdata = {
-    GPIO23_SSP1_SCLK,
-    GPIO24_SSP1_SFRM,
-    GPIO25_SSP1_TXD,
-    GPIO26_SSP1_RXD,
-    GPIO27_SSP1_EXTCLK
-};
-
-
 /* This initialises the MSP hardware resources.  These comprise:
  *  1.  The SSP (Synchronous Serial Port) interface
  *  2.  A register in the CPLD for resetting the MSP.
@@ -330,8 +321,6 @@ static int initialise_msp(void)
 
     /* Enable the SSP clock. */
     CKEN |= CKEN_SSP;
-    /* Configure all of the SSP GPIOs. */
-    pxa2xx_mfp_config(ssp_pin_config, ARRAY_SIZE(ssp_pin_config));
 
     /* Configure the SSP to talk to the MSP. */
     ssp_disable(&ssp);
