@@ -319,9 +319,6 @@ static int initialise_msp(void)
     }
     
 
-    /* Enable the SSP clock. */
-    CKEN |= CKEN_SSP;
-
     /* Configure the SSP to talk to the MSP. */
     ssp_disable(&ssp);
     ssp_config(&ssp,
