@@ -1,0 +1,43 @@
+This directory builds the tools required to upgrade u-boot and update the
+u-boot configuration.  The following files and subdirectories are here:
+
+mtd-rw/
+    Libera 1.46 kernel module to make the mtd0 and mtd1 (u-boot and config)
+    partitions writeable.  Not required for more recent kernels, as we've not
+    troubled to make these partitions read only.
+
+tools/
+    Supporting tools.
+
+update-u-boot
+    Script to perform safe u-boot upgrade.
+
+
+The following utilities are provided in the tools directory:
+
+readmem
+        readmem <start-address> <length>
+    Copies the requested block from physical memory to stdout.  Used to read
+    the programmed u-boot image. 
+
+bindiff
+        bindiff [-q] <file>
+    Compares stdin and <file>, returns an error code if a difference is
+    detected, otherwise returns error code 0.  Used to verify the u-boot
+    image.
+
+makeenv
+        makeenv <block-size> [<env-size>]
+    Reads a u-boot environment from stdin and writes an mtd block image with
+    the correct checksum to stdout ready to be written to flash.
+
+readenv
+        readenv
+    Interprets the input as a u-boot environment and writes it to stdout as a
+    sequence of lines; implements the bash script:
+        tail -c+5 | tr '\0' '\n' | sed '/^$/q'
+
+padff
+        padff <pad-char> <pad-length>
+    Pads stdin with <pad-char> up to <pad-length> and writes result to stdout.
+    Used to prepare u-boot.bin to be written.

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+HERE="$(dirname "$0")"
+
+[ "$(uname -m)" = armv5tel ]  ||
+    Error This should be run on Libera
+case $(echo /lib/ld-linux.so.*) in
+    /lib/ld-linux.so.2)     ARCH="$HERE"/linux-arm ;;
+    /lib/ld-linux.so.3)     ARCH="$HERE"/linux-arm_el ;;
+    *)  Error 'Do not recognise the architecture.  Wrong target system?'
+esac
+
+cat /dev/mtd1 |
+"$ARCH"/readenv

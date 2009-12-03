@@ -1,34 +1,35 @@
 # Makefile to prepare u-boot installation.
 
-TOP = ..
+TOP = $(CURDIR)/..
 include $(TOP)/CONFIG
+include $(TOP)/scripts/COMMON
 
-TARGET_DIR = $(U_BOOT_TARGET_DIR)
+TARGET_DIR = $(INSTALL_ROOT)/u-boot-upgrade
 TARGET_U_BOOT = $(TARGET_DIR)/u-boot.bin
 
 COMPONENT = u-boot
 
 
-O.native := $(foreach COMPILER, native, $(O))
+O.native := $(foreach COMPILER,native,$(O))
 PADFF = $(O.native)/padff
+
+SCRIPTS = update-u-boot readenv
 
 
 default: $(PADFF)
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR)
-	cp update-u-boot $(TARGET_DIR)
-	make -C mtd-rw install TARGET_DIR=$(TARGET_DIR)
-	make -C tools  install TARGET_DIR=$(TARGET_DIR)
-	$(PADFF) 0xff 0x40000 <$(U_BOOT_BIN) >$(TARGET_U_BOOT)
+	cp $(SCRIPTS) $(TARGET_DIR)
+	$(MAKE) -C mtd-rw install TARGET_DIR=$(TARGET_DIR)
+	$(MAKE) -C tools  install TARGET_DIR=$(TARGET_DIR)
+	$(PADFF) 0xff 0x40000 <$(U_BOOT_TOP)/u-boot.bin >$(TARGET_U_BOOT)
 
 $(PADFF):
-	make -C tools
+	$(MAKE) -C tools COMPILERS=native padff
 
 clean:
 	rm -rf $(TARGET_DIR)
-
-clean-all: clean
-	make -C mtd-rw clean
-	make -C tools clean
+	$(MAKE) -C mtd-rw clean
+	$(MAKE) -C tools clean
 
 .PHONY: clean clean-all

@@ -82,7 +82,7 @@ void WriteBlock(const unsigned char * block, int length)
 int main(int argc, char **argv)
 {
     if (argc < 2  ||  argc > 3)
-        Fail("Usage: makeconfig $block_size [$env_size] <params >block\n");
+        Fail("Usage: makeenv $block_size [$env_size] <params >block\n");
 
     int BlockSize = ReadHex(argv[1]);
     int EnvSize = argc > 2 ? ReadHex(argv[2]) : BlockSize;

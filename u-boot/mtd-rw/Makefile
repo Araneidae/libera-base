@@ -1,4 +1,4 @@
-TOP = ../..
+TOP = $(CURDIR)/../..
 COMPONENT = u-boot
 
 MAKEFILE = Makefile.defs

@@ -1,54 +1,18 @@
-# Definitions for Libera rootfs.
-
-ROOTFS_VERSION = DLS development 0.00
-
-CONSOLE_BAUD = 115200
-CONSOLE_TTY = ttyS0
-
-ROOT_PASSWORD = Jungle
-
-SSH_AUTHORIZED_KEYS = $(configdir)/authorized_keys
-
-CFLAGS = -O2 -mthumb
-CFLAGS_dropbear = -O2
-
-TERMS = xterm xterm-color screen vt100 vt102
+# Configuration file for libera target.
 
 
-# This one is essential, nothing builds without it.
-EXTRAS += busybox
-# Components required for normal operation.
-EXTRAS += ntp dropbear portmap
-# Useful debugging tools
-EXTRAS += strace lsof
-# tcpdump
-EXTRAS += libpcap tcpdump
 
+BOOT = initramfs
+# BOOT = nfs
 
-# Temporary and dirty module hack.  
-#  1. LINUX_VERSION should be shared with kernel build
-#  2. This ought to be a rootfs option
-LINUX_VERSION = 2.6.29.3-dls
-LIB_MODULES = $(sysroot)/lib/modules/$(LINUX_VERSION)
+include $(configdir)/PACKAGES
+include $(configdir)/SYSROOT
+include $(configdir)/ROOTFS
 
+include $(configdir)/BOOT_$(BOOT)
 
-final-install::
-        # Install the regular nfs mounts.
-	mkdir -p $(patsubst %,$(sysroot)/mnt/%,nfs prod work)
-	cat $(configdir)/fstab >>$(sysroot)/etc/fstab
-
-        # Temporary hacks
-	mkdir -p $(LIB_MODULES)
-	cp $(LIBERA_ROOT)/libera/libera.ko $(LIBERA_ROOT)/msp/msp.ko \
-            $(LIB_MODULES)
-	echo /lib/modules/$(LINUX_VERSION)/libera.ko: \
-            >>$(LIB_MODULES)/modules.dep
-	echo /lib/modules/$(LINUX_VERSION)/msp.ko: \
-            >>$(LIB_MODULES)/modules.dep
-
-	$(install-files) $(TOP)/libera/file-list
-
-
-ifdef DEVELOPMENT
-include $(configdir)/DEVELOPMENT
+ifeq ($(BOOT),nfs)
+    NETWORK = nfs
+else
+    NETWORK = mtd
 endif

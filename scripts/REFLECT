@@ -11,6 +11,7 @@
 #   COMPONENT   Name of component: determines where the build will occur.
 
 include $(TOP)/CONFIG
+include $(TOP)/scripts/COMMON
 
 
 define EXPAND_makefile
@@ -25,10 +26,12 @@ clean-$(COMPILER):
 	rm -rf $$(O.$(COMPILER))
 
 default $(filter-out clean,$(MAKECMDGOALS)):: $$(O.$(COMPILER))
-	make -C $$(O.$(COMPILER)) -f $(CURDIR)/$(TOP)/scripts/REFLECTOR \
-            TOP=$(CURDIR)/$(TOP) COMPILER=$(COMPILER) \
+	$(MAKE) -C $$(O.$(COMPILER)) -f $(TOP)/scripts/REFLECTOR \
+            TOP=$(TOP) COMPILER=$(COMPILER) \
             MAKEFILE=$(CURDIR)/$(MAKEFILE) \
-            VPATH=$(CURDIR) O=$$(O.$(COMPILER)) CURDIR=$(CURDIR) $$@
+            VPATH=$(CURDIR) O=$$(O.$(COMPILER)) $$@
+
+#            VPATH=$(CURDIR) O=$$(O.$(COMPILER)) CURDIR=$(CURDIR) $$@
 
 .PHONY: default $(MAKECMDGOALS) clean clean-$(COMPILER)
 endef

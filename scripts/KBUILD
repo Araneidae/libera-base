@@ -1,34 +1,40 @@
 # Makefile for kernel builds.
 
-
+include $(TOP)/CONFIG
 include $(TOP)/scripts/COMMON
+include $(TOP)/scripts/COMPILE
 
 export CROSS_COMPILE
 export ARCH = arm
 
+
 # The kernel will have been built using the kernel build tool.  Ask it kindly
 # where it put the build; we need this for module builds!
 KBUILD_OUTPUT = $(shell \
-    make -s -C $(KERNEL_BUILD) TARGET=libera-2.6 print-build-dir)
+    $(MAKE) -s -C $(KERNEL_TOP) TARGET=libera-2.6 print-build-dir)
 
-TARGET_DIR ?= /home/libera/nfs/testing
+TARGET_DIR = $(INSTALL_ROOT)/$(COMPONENT)
 
 
 default:
 
+# Building kernel modules out of tree is annoyingly tricky.  It seems the
+# most practical way is to make links to all the source files in the build
+# directory; not so great.
 $(O):
 	mkdir -p $(O)
 	ln -fs $(wildcard $(patsubst %,$(CURDIR)/%, *.[c,h] $(MAKEFILE))) $(O)
 
 default: $(O)
-	make -C $(KBUILD_OUTPUT) M=$(O)
-
-install:
+	$(MAKE) -C $(KBUILD_OUTPUT) M=$(O)
+	rm -rf $(TARGET_DIR)
+	mkdir -p $(TARGET_DIR)
 	cp $(patsubst %,$(O)/%,$(TARGETS)) $(TARGET_DIR)
 
-# install:
-# 	make -C $(KBUILD_OUTPUT) M=$(CURDIR) \
-#             INSTALL_MOD_PATH=$(CURDIR)/testing modules_install V=1
+# The following appears to be an "official" way to install the modules, but
+# it seems somewhat overkill.
+# 	$(MAKE) -C $(KBUILD_OUTPUT) M=$(O) \
+#              INSTALL_MOD_PATH=$(TARGET_DIR) modules_install V=1
 
 clean:
 	rm -rf $(O)

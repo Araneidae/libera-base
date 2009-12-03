@@ -1,4 +1,4 @@
-TOP = ..
+TOP = $(CURDIR)/..
 
 COMPONENT = libera
 MAKEFILE = Kbuild

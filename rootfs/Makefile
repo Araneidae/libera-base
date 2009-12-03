@@ -2,30 +2,35 @@
 
 TOP = $(CURDIR)/..
 COMPONENT = rootfs
+COMPILER = linux-arm_el
 include $(TOP)/scripts/COMMON
 
+export TOP
 
-ROOTFS_EXPORTS = \
-    BINUTILS_DIR COMPILER_PREFIX BUILD_TARGET DEVELOPMENT 
-MAKE_ROOTFS = \
-    $(MAKE) -C $(ROOTFS) NOLOCAL=1 TARGET=. \
-        $(call EXPORT, $(ROOTFS_EXPORTS)) LIBERA_ROOT=$(BUILD_ROOT) \
-        MKIMAGE=$(U_BOOT_DIR)/mkimage \
-        LIBERA_BASE=$(TOP) \
-        configdir=$(CURDIR)/config 
+TARGET = $(CURDIR)/$1
+#CONFIG = $(CURDIR)/CONFIG.rootfs
+TARGET_ROOT = $(BUILD_ROOT)/rootfs/$1
+
+libera_TARGET    = $(CURDIR)/libera
+installer_TARGET = $(CURDIR)/installer
+libera_ROOT      = $(BUILD_ROOT)/rootfs/libera
+installer_ROOT   = $(BUILD_ROOT)/rootfs/installer
+
+define rootfs
+$(ROOTFS)/rootfs $2 TARGET=$($1_TARGET) TARGET_ROOT=$($1_ROOT)
+endef
 
 rootfs: 
-	$(MAKE_ROOTFS) default
+	$(call rootfs,libera,make) BOOT=initramfs
 
-extras:
-	$(MAKE_ROOTFS) build-extras
-
-boot:
-	$(MAKE_ROOTFS) deploy-rootfs
-
-clean:
-	rm -rf $(BUILD_TARGET)
+packages:
+	$(call rootfs,libera,all)
 
 default: rootfs
 
-.PHONY: rootfs extras boot clean
+installer:
+#	$(call rootfs,installer,all)
+	$(call rootfs,installer,make)
+
+
+.PHONY: rootfs packages installer

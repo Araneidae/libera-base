@@ -1,0 +1,88 @@
+Upgrading Libera to DLS rootfs
+==============================
+Michael Abbott
+
+Work to Do
+----------
+
+Documentation (stuff to go in here)
+
+* Want to pick up 2.6.32 kernel when it's released: this should eliminate all
+of our local patches, as everything has now gone into the mainstream kernel.
+Unfortunately they're not in 2.6.31.
+
+* Probably worth upgrading to a more recent busybox, but will need to do
+something about the bug which converts 0x80000000 to 0x7FFFFFFF.
+
+* Need to update the rootfs:
+
+** Documentation
+** Handling nfs boot for multiple targets
+** Would like to build from outside rootfs
+
+
+EPICS Driver
+~~~~~~~~~~~~
+
+Now have a bit of a dangling issue with the EPICS driver.  The 3.14.10 build
+uses targets named `linux-arm_gnueabi`, while 3.14.11 introduces
+
+
+
+Upgrading U-Boot
+----------------
+
+The directory `./u-boot` creates tools and scripts for performing a u-boot
+upgrade.  The makefile `./u-boot/Makefile` places the resulting build in the
+directory pointed to by `U_BOOT_TARGET_DIR`, currently defined in `./CONFIG`
+as `/home/libera/nfs/testing/u-boot-upgrade`.
+
+The current u-boot upgrade only works on Libera 1.46.
+
+
+Booting Libera from tftp
+------------------------
+
+The following environment should be set in u-boot:
+
+.Libera 1.46 u-boot configuration for Libera in storage ring
+----
+baudrate=115200
+bootargs=root=/dev/mtdblock4 console=ttyS0,115200 mem=64M
+bootcmd=bootm 80000
+bootdelay=5
+ipaddr=172.23.204.2
+netmask=255.255.240.0
+serverip=172.23.194.1
+stdin=serial
+stdout=serial
+stderr=serial
+----
+
+To perform a working NFS boot.  First ensure that pc13 is running as an NFS
+server by running `/usr/sbin/showmount -e pc13`.  If this fails, run `sudo
+/etc/init.d/nfs start` on pc13.
+
+.A manual boot transcript
+----
+u-boot$ setenv serverip 172.23.240.3
+u-boot$ setenv ipaddr 172.23.252.1
+u-boot$ 
+u-boot$ 
+----
+
+This currently works!
+
+
+.u-boot configuration for lab development
+----
+baudrate=115200
+bootcmd=tftpboot a0000000 boot-script-libera.image && autoscr a0000000
+bootdelay=5
+ipaddr=172.23.252.1
+netmask=255.255.240.0
+serverip=172.23.240.3
+stdin=serial
+stdout=serial
+stderr=serial
+----

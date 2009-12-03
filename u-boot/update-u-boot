@@ -18,38 +18,59 @@ Error()
 #
 check_mem()
 {
-    "$HERE"/readmem $1 0x40000 |
-    "$HERE"/bindiff "$2"  &&
+    "$ARCH"/readmem $1 0x40000 |
+    "$ARCH"/bindiff "$2"  &&
     # This last line is a bit absurd.  With Libera 1.46 bash (version 2.05b)
     # we don't have `set -o pipefail` available, so need to check readmem
     # separately.
     [ $PIPESTATUS = 0 ]
 }
 
-
-# Exit cleanup.
-on_exit()
+# Writes to mtd device using method appropriate to target system.
+#
+#   write_mtd <file> <mtd-number>
+#
+write_mtd()
 {
-#    rm -f $NEW_ENV
-    rmmod mtd-rw.ko
+    if [ -b /dev/mtdblock$2 ]; then
+        cat "$1" >/dev/mtdblock$2
+    else
+        flashcp "$1" /dev/mtd$2
+    fi
 }
-
 
 
 [ "$(uname -m)" = armv5tel ]  ||
     Error This should be run on Libera
-[ "$(uname -r)" = 2.4.21-rmk1-pxa1-z ]  ||
-    Error This will only work on Libera 1.46!
+
+# Determine which target architecture: ARM ABI or EABI.  Do this by checking
+# which loader is installed.
+case $(echo /lib/ld-linux.so.*) in
+    /lib/ld-linux.so.2)     ARCH="$HERE"/linux-arm ;;
+    /lib/ld-linux.so.3)     ARCH="$HERE"/linux-arm_el ;;
+    *)  Error 'Do not recognise the architecture.  Wrong target system?'
+esac
+
 
 
 VERBOSE=false
 TIMEOUT=5
-# SERVER_ADDRESS=172.23.240.3
-SERVER_ADDRESS=172.23.194.1
+# DEFAULT_SERVER_ADDRESS=172.23.240.3
+DEFAULT_SERVER_ADDRESS=172.23.194.1
 FORCED=false
 
+# Read default serverip from configuration if possible.
+SERVER_ADDRESS="$(
+    cat /dev/mtd1 |
+    "$ARCH"/readenv |
+    sed -n '/^serverip=/{s///;p;q;}')"
+[ -z "$SERVER_ADDRESS" ]  &&  SERVER_ADDRESS=$DEFAULT_SERVER_ADDRESS
+
+
 ECHO=:
-while getopts 'hvt:s:f' option; do
+TEST=false
+UPGRADE=true
+while getopts 'hvt:s:fT' option; do
     case "$option" in
     h)  cat <<'EOF'
 Usage: update-u-boot [options]
@@ -58,6 +79,7 @@ Usage: update-u-boot [options]
     -t:     Set boot timeout
     -s:     Set tftp server address
     -f      Force update even if u-boot up to date (testing only!)
+    -T      Test whether update needed, but don't update.
 EOF
         exit 0 ;;
     v)  VERBOSE=true
@@ -65,35 +87,44 @@ EOF
     t)  TIMEOUT="$OPTARG" ;;
     s)  SERVER_ADDRESS="$OPTARG" ;;
     f)  FORCED=true ;;
+    T)  TEST=true
+        UPGRADE=false ;;
     *)  Error Invalid option: try -h for help ;;
     esac
 done
     
 
-if ! $FORCED; then
+if ! $FORCED || $TEST; then
     $ECHO Testing if u-boot already upgraded
-    if "$HERE"/bindiff $($VERBOSE || echo -q) /dev/mtd0 "$U_BOOT_IMAGE"; then
+    if "$ARCH"/bindiff $($VERBOSE || echo -q) /dev/mtd0 "$U_BOOT_IMAGE"; then
         $ECHO U-boot already upgraded
-        exit 0
+        $FORCED || exit 0
+    elif $TEST; then
+        echo U-boot needs upgrade
+        # If we're in verbose and test mode then drop through to calculate the
+        # new environment
+        $VERBOSE || exit 1
     fi
 fi
 
 
-$ECHO Updating u-boot environment.
-
 NEW_ENV=/tmp/mtd1.new
-insmod "$HERE"/mtd-rw.ko
-trap on_exit EXIT
 
 
-IP_ADDRESS=$(/sbin/ifconfig eth0 |
+IP_ADDRESS=$(
+    /sbin/ifconfig eth0 |
     sed -n '/^eth0/{n;s/^.*inet addr://;s/ .*$//;p;}')
-NET_MASK=$(/sbin/ifconfig eth0 |
+NET_MASK=$(
+    /sbin/ifconfig eth0 |
     sed -n '/^eth0/{n;s/^.*Mask://;s/ .*$//;p;}')
+GATEWAY=$(
+    route -n |
+    sed -n '/^0\.0\.0\.0  */{s///;s/  *.*$//;p;q;}')
 
 BOOT_ARGS="$(cat /proc/cmdline)"
 
-cat <<EOF |
+{
+    cat <<EOF 
 baudrate=115200
 bootargs=$BOOT_ARGS
 bootcmd=bootm 80000
@@ -105,13 +136,28 @@ stdin=serial
 stderr=serial
 stdout=serial
 EOF
-"$HERE"/makeenv 40000 4000 > $NEW_ENV  ||
+    [ -n "$GATEWAY" ]  &&  echo "gatewayip=$GATEWAY"
+} |
+"$ARCH"/makeenv 40000 4000 > $NEW_ENV  ||
     Error Error preparing new u-boot environment
 
-$VERBOSE  &&  { cat $NEW_ENV | "$HERE"/readenv; }
+if $VERBOSE; then
+    echo New u-boot environment:
+    cat $NEW_ENV | "$ARCH"/readenv
+fi
+$TEST  &&  exit 1
+
+
+$ECHO Updating u-boot environment.
+
+if [ "$(uname -r)" = "2.4.21-rmk1-pxa1-z" ]; then
+    $ECHO Enabling write to u-boot mtd
+    insmod "$HERE"/mtd-rw.ko
+    trap on_exit 'rmmod mtd-rw.ko'
+fi
 
 $ECHO Writing updated environment
-cat $NEW_ENV >/dev/mtdblock1  &&
+write_mtd $NEW_ENV 1  &&
 sync  &&
 $ECHO Checking new u-boot environment  &&
 check_mem 0x40000 $NEW_ENV  ||
@@ -121,7 +167,7 @@ check_mem 0x40000 $NEW_ENV  ||
 # Ok.  We've done everything we need to do; now it's time to update the
 # u-boot itself.  If this goes wrong we're in trouble!
 $ECHO Writing new u-boot
-cat "$U_BOOT_IMAGE" >/dev/mtdblock0  &&
+write_mtd "$U_BOOT_IMAGE" 0  &&
 sync  &&
 check_mem 0 "$U_BOOT_IMAGE"  ||
 {
@@ -131,4 +177,3 @@ check_mem 0 "$U_BOOT_IMAGE"  ||
     echo >&2 !!! $'\e[1;0m'
     exit 1
 }
-

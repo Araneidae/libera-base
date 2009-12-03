@@ -1,8 +1,10 @@
+include $(TOP)/CONFIG
 include $(TOP)/scripts/COMMON
+include $(TOP)/scripts/COMPILE
 
 default:
 
-INSTALL_COMMAND = cp $^ $(TARGET_DIR)
+INSTALL_COMMAND = cp $^ $(INSTALL_O)
 
 include $(MAKEFILE)
 
@@ -10,7 +12,12 @@ INSTALL_TARGETS ?= $(TARGETS) $(TARGETS_$(COMPILER))
 
 default: $(TARGETS) $(TARGETS_$(COMPILER))
 
-install: $(INSTALL_TARGETS)
-	$(INSTALL_COMMAND)
+$(INSTALL_O):
+	mkdir -p $(INSTALL_O)
 
-.PHONY: default
+$(INSTALL_O)/%: % $(INSTALL_O)
+	cp $< $@
+
+install: $(INSTALL_TARGETS:%=$(INSTALL_O)/%)
+
+.PHONY: default install

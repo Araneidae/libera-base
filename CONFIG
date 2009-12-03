@@ -1,30 +1,19 @@
+# Workspace for all our builds.
 BUILD_ROOT = /scratch/tmp/libera-base
+# Output directory for final installable files
+INSTALL_ROOT = /home/libera/nfs/testing/libera-upgrade
 
+# Canonical locations of toolchains.  Override in appropriate toolchains file
+# if necessary.
 BINUTILS_DIR = /dls_sw/targetOS/x-tools/$(TOOLCHAIN_VERSION)/$(COMPILER_PREFIX)
-TAR_DIRS = /dls_sw/prod/targetOS/tar-files /dls_sw/work/targetOS/tar-files
 
-KERNEL_BUILD = $(TOP)/../kernel
-ROOTFS = $(TOP)/../rootfs
-
-# ROOTFS = /home/mga83/targetOS/rootfs
-# KERNEL_CONFIG = i-tech
-# KERNEL_CONFIG = dls
-
-# By default target new Libera in builds.
-# COMPILER = linux-arm_el
+# Kernel build configuration.
+KERNEL_TOP = $(TOP)/../kernel
+# Rootfs builder.
+ROOTFS_TOP = $(TOP)/../rootfs
 
 # The u-boot image to be installed is here.
-U_BOOT_BIN = /dls_sw/targetOS/u-boot/xcep/u-boot.bin
-# Here is where we place the u-boot build.
-U_BOOT_TARGET_DIR = /home/libera/nfs/testing/u-boot-upgrade
-
-
-# Where to place unzipped files
-SOURCE_ROOT = $(BUILD_ROOT)/src
-# Where to build targets.  Depends on local makefile specific settings
-# COMPILER and COMPONENT.
-O = $(BUILD_ROOT)/$(COMPONENT)/$(COMPILER)
-
+U_BOOT_TOP = /dls_sw/targetOS/u-boot/xcep
 
 # Allow local overrides of all the above.
 -include $(TOP)/CONFIG.local

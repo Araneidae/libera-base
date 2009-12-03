@@ -1,0 +1,105 @@
+Libera Base
+===========
+
+
+Directories
+-----------
+
+`toolchains/`::
+Defines the compilers used to build Libera components.
++
+--
+`linux-arm`::
+Standard cross compiler for Libera 1.46, used to build user space tools to run
+on Libera 1.46.  Toolchain built using crosstool with gcc version 3.4.5 and
+glibc 2.3.6.
+`linux-arm_3.3.3`::
+Original cross compiler for Libera 1.46, as distributed by Instrumentation
+Technologies, using gcc version 3.3.3 and glibc 2.3.2.  Used for building
+kernel modules? 
+`linux-arm_el`::
+Cross compiler to target Libera with EABI, targeting Libera 2.00 and the DLS
+rootfs.  Building using crosstool-NG with gcc version 4.3.2 and glibc 2.7.
+`native`::
+Native compiler.
+--
+
+
+`msp430/`::
+Kernel driver for MSP430 voltage monitoring device.  Creates device
+`/dev/msp0` in Libera.
+
+
+`libera/`::
+Kernel driver for Libera.  Creates `/dev/libera.*` device nodes.
+
+
+Generated Components
+--------------------
+
+The following components are generated.
+
+U-boot upgrader::
+Tool for ensuring that u-boot is up to date.
+
+
+External Dependencies
+---------------------
+
+The Libera Base builder has the following external dependencies:
+
+Toolchain dependencies::
+The toolchains required to build components for Libera are specified in the
+`toolchains/` directory.  All the toolchain definitions define
+`TOOLCHAIN_VERSION` and `COMPILER_PREFIX` symbols which are then used by the
+`BINUTILS_DIR` definition in the top level `CONFIG` file.
+
+Kernel builder::
+The libera kernel is configured and build by a separate directory located by
+the `KERNEL_TOP` symbol.
+
+U-Boot::
+A pre-built u-boot, not managed by this build, needs to be given.  
+
+
+Configuration
+-------------
+
+The top level `CONFIG` file is used to configure the external dependencies and
+where builds should be located.  The following symbols are defined and can be
+overridden if required in a `CONFIG.local` file.
+
+`BUILD_ROOT`::
+This is where the entire libera base build will occur.
+
+`INSTALL_ROOT`::
+This is where installed components will be placed ready to be run.
+
+`BINUTILS_DIR`::
+The toolchain dependencies assume a common pattern for locating the
+toolchains; if this is not suitable, it will be necessary to define an
+appropriate value for `BINUTILS_DIR` in each `toolchains` entry.
+
+`KERNEL_TOP`::
+This is the kernel build tree.  It needs to support the following two make
+targets, used by this build process:
++
+--
+`make -s -C $(KERNEL_TOP) TARGET=libera-2.6 print-build-dir`::
+Prints absolute path to the directory where the kernel is built.
+
+`make -s -C $(KERNEL_TOP) TARGET=libera-2.6 print-kernel-version`::
+Prints kernel version, in `uname -r` format.
+--
+
+`U_BOOT_TOP`::
+This is where the built u-boot files are located.  This directory must contain
+the following two files:
++
+--
+`mkimage`::
+This is the u-boot `mkimage` tool used to assemble u-boot loadable images.
+`u-boot.bin`::
+This should be the u-boot image in binary format ready to be copied directly
+to sector 0 of the flash.
+--

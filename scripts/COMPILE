@@ -1,0 +1,24 @@
+# Definitions required for compilation
+
+ifndef COMPILER
+$(error Must define COMPILER first)
+endif
+
+CROSS_COMPILE = $(BINUTILS_DIR)/bin/$(COMPILER_PREFIX)-
+
+include $(TOP)/toolchains/$(COMPILER)
+
+
+AS      = $(CROSS_COMPILE)as
+LD      = $(CROSS_COMPILE)ld
+CC      = $(CROSS_COMPILE)gcc
+AR      = $(CROSS_COMPILE)ar
+NM      = $(CROSS_COMPILE)nm
+STRIP   = $(CROSS_COMPILE)strip
+OBJCOPY = $(CROSS_COMPILE)objcopy
+OBJDUMP = $(CROSS_COMPILE)objdump
+CPP     = $(CC) -E
+
+CFLAGS += -std=gnu99
+CFLAGS += -Werror -Wall
+CFLAGS += -O2
