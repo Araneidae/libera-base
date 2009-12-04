@@ -1,0 +1,67 @@
+# Support functions for u-boot update.  This file is shared by update-u-boot
+# and configure-boot.
+
+U_BOOT_IMAGE="$HERE/u-boot.bin"
+
+
+# Writes arguments to stderr and exits with non zero return code.
+Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+# Writes to mtd device using method appropriate to target system.
+#
+#   write_mtd <file> <mtd-number>
+#
+write_mtd()
+{
+    if [ -b /dev/mtdblock$2 ]; then
+        cat "$1" >/dev/mtdblock$2
+    else
+        flashcp "$1" /dev/mtd$2
+    fi
+}
+
+# Compares image in memory with given file (length of 0x40000 is assumed)
+#
+#   check_mem <start-address> <file>
+#
+check_mem()
+{
+    # *Try* setting pipefail, if we can, but ignore the error if it fails.
+    set -o pipefail 2>/dev/null
+    "$ARCH"/readmem $1 0x40000 |
+    "$ARCH"/bindiff "$2"  &&
+    # This last line is a bit absurd.  With Libera 1.46 bash (version 2.05b)
+    # we don't have `set -o pipefail` available, so need to check readmem
+    # separately.  However, don't fail if $PIPESTATUS is empty, as ash doesn't
+    # support that.
+    [ -z "$PIPESTATUS" -o "$PIPESTATUS" = 0 ]
+}
+
+# Ensures that the flash is writeable.
+make_writeable()
+{
+    # In fact it's only on the original Libera 1.46 kernel that we enable
+    # write access to the mtd, by loading the special mtd-rw module.
+    if [ "$(uname -r)" = 2.4.21-rmk1-pxa1-z ]  &&
+       ! lsmod | grep -q '^mtd-rw.ko '; then
+        $ECHO Enabling write to u-boot mtd
+        insmod "$HERE"/linux-arm_3.3.3/mtd-rw.ko
+        trap 'rmmod mtd-rw.ko' EXIT
+    fi
+}
+
+
+[ "$(uname -m)" = armv5tel ]  ||
+    Error This should be run on Libera
+
+# Determine which target architecture: ARM ABI or EABI.  Do this by checking
+# which loader is installed.
+case $(echo /lib/ld-linux.so.*) in
+    /lib/ld-linux.so.2)     ARCH="$HERE"/linux-arm ;;
+    /lib/ld-linux.so.3)     ARCH="$HERE"/linux-arm_el ;;
+    *)  Error 'Do not recognise the architecture.  Wrong target system?'
+esac

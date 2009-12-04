@@ -3,165 +3,66 @@
 # Script to update u-boot on Libera
 
 HERE="$(dirname "$0")"
+. "$HERE"/functions
+
+
 U_BOOT_IMAGE="$HERE/u-boot.bin"
 
 
-Error()
+add_args()
 {
-    echo >&2 "$@"
-    exit 1
-}
-
-# Compares image in memory with given file (length of 0x40000 is assumed)
-#
-#   check_mem <start-address> <file>
-#
-check_mem()
-{
-    "$ARCH"/readmem $1 0x40000 |
-    "$ARCH"/bindiff "$2"  &&
-    # This last line is a bit absurd.  With Libera 1.46 bash (version 2.05b)
-    # we don't have `set -o pipefail` available, so need to check readmem
-    # separately.
-    [ $PIPESTATUS = 0 ]
-}
-
-# Writes to mtd device using method appropriate to target system.
-#
-#   write_mtd <file> <mtd-number>
-#
-write_mtd()
-{
-    if [ -b /dev/mtdblock$2 ]; then
-        cat "$1" >/dev/mtdblock$2
-    else
-        flashcp "$1" /dev/mtd$2
-    fi
+    CONFIGURE_ARGS="$CONFIGURE_ARGS -f$1=$2"
 }
 
 
-[ "$(uname -m)" = armv5tel ]  ||
-    Error This should be run on Libera
-
-# Determine which target architecture: ARM ABI or EABI.  Do this by checking
-# which loader is installed.
-case $(echo /lib/ld-linux.so.*) in
-    /lib/ld-linux.so.2)     ARCH="$HERE"/linux-arm ;;
-    /lib/ld-linux.so.3)     ARCH="$HERE"/linux-arm_el ;;
-    *)  Error 'Do not recognise the architecture.  Wrong target system?'
-esac
-
-
-
-VERBOSE=false
-TIMEOUT=5
-# DEFAULT_SERVER_ADDRESS=172.23.240.3
-DEFAULT_SERVER_ADDRESS=172.23.194.1
-FORCED=false
-
-# Read default serverip from configuration if possible.
-SERVER_ADDRESS="$(
-    cat /dev/mtd1 |
-    "$ARCH"/readenv |
-    sed -n '/^serverip=/{s///;p;q;}')"
-[ -z "$SERVER_ADDRESS" ]  &&  SERVER_ADDRESS=$DEFAULT_SERVER_ADDRESS
-
-
+CONFIGURE_ARGS=
 ECHO=:
-TEST=false
-UPGRADE=true
-while getopts 'hvt:s:fT' option; do
+FORCED=false
+DO_WRITE=false
+while getopts 'hVt:s:Fw' option; do
     case "$option" in
     h)  cat <<'EOF'
 Usage: update-u-boot [options]
     -h      Show this help
-    -v      Verbose mode: comment on every stage
+    -V      Verbose mode: comment on every stage
     -t:     Set boot timeout
-    -s:     Set tftp server address
-    -f      Force update even if u-boot up to date (testing only!)
-    -T      Test whether update needed, but don't update.
+    -s:     Set tftp server address: *must* be a decimal dotted address.
+    -F      Force update even if u-boot up to date (testing only!)
+    -w      Write the update if required or forced.  Otherwise only a test
+            is done (and the return code is set accordingly).
 EOF
         exit 0 ;;
-    v)  VERBOSE=true
-        ECHO=echo ;;
-    t)  TIMEOUT="$OPTARG" ;;
-    s)  SERVER_ADDRESS="$OPTARG" ;;
-    f)  FORCED=true ;;
-    T)  TEST=true
-        UPGRADE=false ;;
+    V)  ECHO=echo
+        CONFIGURE_ARGS="$CONFIGURE_ARGS -V";;
+    t)  add_args bootdelay $OPTARG ;;
+    s)  add_args serverip  $OPTARG ;;
+    F)  FORCED=true ;;
+    w)  DO_WRITE=true ;;
     *)  Error Invalid option: try -h for help ;;
     esac
 done
     
 
-if ! $FORCED || $TEST; then
-    $ECHO Testing if u-boot already upgraded
-    if "$ARCH"/bindiff $($VERBOSE || echo -q) /dev/mtd0 "$U_BOOT_IMAGE"; then
-        $ECHO U-boot already upgraded
-        $FORCED || exit 0
-    elif $TEST; then
-        echo U-boot needs upgrade
-        # If we're in verbose and test mode then drop through to calculate the
-        # new environment
-        $VERBOSE || exit 1
-    fi
+
+$ECHO Testing if u-boot already upgraded
+if "$ARCH"/bindiff $($VERBOSE || echo -q) /dev/mtd0 "$U_BOOT_IMAGE"; then
+    $ECHO U-boot already upgraded
+    $FORCED || exit 0
+elif $TEST; then
+    $ECHO U-boot needs upgrade
+    # If we're in verbose and test mode then drop through to calculate the
+    # new environment
+    $DO_WRITE || exit 1
 fi
 
 
-NEW_ENV=/tmp/mtd1.new
+# From this point on we're committed to writing to the flash.
+# Start by ensuring we can write to mtd0 and mtd1.
+$ECHO Writing to u-boot
+make_writeable  &&
 
-
-IP_ADDRESS=$(
-    /sbin/ifconfig eth0 |
-    sed -n '/^eth0/{n;s/^.*inet addr://;s/ .*$//;p;}')
-NET_MASK=$(
-    /sbin/ifconfig eth0 |
-    sed -n '/^eth0/{n;s/^.*Mask://;s/ .*$//;p;}')
-GATEWAY=$(
-    route -n |
-    sed -n '/^0\.0\.0\.0  */{s///;s/  *.*$//;p;q;}')
-
-BOOT_ARGS="$(cat /proc/cmdline)"
-
-{
-    cat <<EOF 
-baudrate=115200
-bootargs=$BOOT_ARGS
-bootcmd=bootm 80000
-bootdelay=$TIMEOUT
-ipaddr=$IP_ADDRESS
-netmask=$NET_MASK
-serverip=$SERVER_ADDRESS
-stdin=serial
-stderr=serial
-stdout=serial
-EOF
-    [ -n "$GATEWAY" ]  &&  echo "gatewayip=$GATEWAY"
-} |
-"$ARCH"/makeenv 40000 4000 > $NEW_ENV  ||
-    Error Error preparing new u-boot environment
-
-if $VERBOSE; then
-    echo New u-boot environment:
-    cat $NEW_ENV | "$ARCH"/readenv
-fi
-$TEST  &&  exit 1
-
-
-$ECHO Updating u-boot environment.
-
-if [ "$(uname -r)" = "2.4.21-rmk1-pxa1-z" ]; then
-    $ECHO Enabling write to u-boot mtd
-    insmod "$HERE"/mtd-rw.ko
-    trap on_exit 'rmmod mtd-rw.ko'
-fi
-
-$ECHO Writing updated environment
-write_mtd $NEW_ENV 1  &&
-sync  &&
-$ECHO Checking new u-boot environment  &&
-check_mem 0x40000 $NEW_ENV  ||
-    Error Failed to write new u-boot environment
+"$HERE"/configure-boot -w $CONFIGURE_ARGS  ||
+    Error Unable to set configuration
 
 
 # Ok.  We've done everything we need to do; now it's time to update the

@@ -13,7 +13,7 @@ COMPONENT = u-boot
 O.native := $(foreach COMPILER,native,$(O))
 PADFF = $(O.native)/padff
 
-SCRIPTS = update-u-boot readenv
+SCRIPTS = update-u-boot functions configure-boot
 
 
 default: $(PADFF)

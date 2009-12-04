@@ -1,0 +1,177 @@
+#!/bin/sh
+
+# This script updates the u-boot configuration.
+
+HERE="$(dirname "$0")"
+. "$HERE"/functions
+
+
+# DEFAULT_SERVER_ADDRESS=172.23.240.3     # In the lab
+DEFAULT_serverip=172.23.194.1     # On the machine
+
+
+
+# Assigns to a u-boot variable and adds it to list of variables.  Called as
+#
+#   set_variable <var> <value>
+#
+set_variable()
+{
+    # Perform local assignment
+    eval $1='"$2"'
+    # Check for <var> in $VARIABLES.
+    local V
+    for V in $VARIABLES; do
+        [ "$V" = "$1" ]  &&  return
+    done
+    VARIABLES="$VARIABLES $1"
+}
+
+# Removes a u-boot variable from the list of variables.  Called as
+#
+#   unset_variable <var>
+#
+unset_variable()
+{
+    local V
+    local OLD_VARIABLES="$VARIABLES"
+    VARIABLES=
+    for V in $OLD_VARIABLES; do
+        if [ "$V" = "$1" ]; then
+            eval unset $1
+        else
+            VARIABLES="$VARIABLES $V"
+        fi
+    done
+}
+
+# Called with a single argument of the form <var>=<value>.  The argument is
+# split into its two components, the assignment is executed, and <var> is
+# added to $VARIABLES if it's not already present.  Called as
+#
+#   parse_set_variable <var>=<value>
+#
+parse_set_variable()
+{
+    # Split argument into VAR, VALUE pair.
+    local VAR="$(echo "$1" | sed -rn '/^([a-z]*)=.*$/{s//\1/;p;q;}')"
+    [ -n "$VAR" ]  ||  Error 'Invalid or no variable specified!'
+    local VALUE="${1:${#VAR}}"
+    set_variable $VAR "${VALUE:1}"
+}
+
+# Reads the specified variable directly from flash
+read_config()
+{
+    cat /dev/mtd1 |
+    "$ARCH"/readenv |
+    sed -n '/^'$1'=/{s///;p;q;}'
+}
+
+
+# Read configuration defaults from current environment and configuration.
+VARIABLES=
+
+# Fixed variables, don't change these!
+set_variable baudrate 115200
+set_variable stdin  serial
+set_variable stderr serial
+set_variable stdout serial
+
+set_variable bootdelay 5
+
+set_variable ipaddr $(
+    /sbin/ifconfig eth0 |
+    sed -n '/^eth0/{n;s/^.*inet addr://;s/ .*$//;p;}')
+set_variable netmask $(
+    /sbin/ifconfig eth0 |
+    sed -n '/^eth0/{n;s/^.*Mask://;s/ .*$//;p;}')
+set_variable gatewayip $(
+    route -n |
+    sed -n '/^0\.0\.0\.0  */{s///;s/  *.*$//;p;q;}')
+set_variable ethaddr $(
+    /sbin/ifconfig eth0 |
+    sed -n '/^eth0/{s/^.*HWaddr //;p;q;}')
+    
+set_variable bootargs "$(cat /proc/cmdline)"
+set_variable bootcmd 'bootm 80000'
+set_variable hostname "$(hostname)"
+
+# Read default serverip (used for tftpboot) from configuration if possible.
+set_variable serverip "$(read_config serverip)"
+[ -z "$serverip" ]  &&  serverip=$DEFAULT_serverip
+
+
+SHOW_CURRENT=false
+DO_WRITE=false
+SHOW_NEW=false
+KEEP_CONFIG=false
+ECHO=:
+while getopts 'hsnwv:f:d:Vk' option; do
+    case "$option" in
+        h)  cat <<EOF
+Usage: $0 blah
+
+Configures u-boot for Libera.
+Options:
+    -s  Shows current configuration.
+    -n  Show configuration to be written
+    -w  Writes new configuration: no action is taken if this flag is not set.
+    -v<var>=<value>
+        Set u-boot variable <var> to <value> in environment.
+    -f<var>
+        Read specified variable directly from flash
+    -d<var>
+        Remove specified variable from environment
+    -V  Verbose: comment on each stage.
+    -k  Keep generated configuration file (in /tmp/mtd1.new)
+EOF
+            exit 0
+            ;;
+        s)  SHOW_CURRENT=true ;;
+        n)  SHOW_NEW=true ;;
+        w)  DO_WRITE=true ;;
+        v)  parse_set_variable "$OPTARG" ;;
+        f)  set_variable $OPTARG "$(read_config $OPTARG)" ;;
+        d)  unset_variable $OPTARG ;;
+        V)  ECHO=echo ;;
+        k)  KEEP_CONFIG=true ;;
+        *)  Error Invalid option.  Try -h for help.
+    esac
+done
+
+# Check that *some* action was requested!
+$SHOW_CURRENT || $SHOW_NEW || $DO_WRITE || $KEEP_CONFIG ||
+    Error 'Try -h for help.'
+
+if $SHOW_CURRENT; then
+    $ECHO Current configuration:
+    cat /dev/mtd1 |
+    "$ARCH"/readenv
+fi
+
+
+NEW_ENV=/tmp/mtd1.new
+$KEEP_CONFIG || trap "rm -f $NEW_ENV" EXIT
+
+# Generate the new u-boot environment.
+for V in $VARIABLES; do
+    eval 'echo "$V=$'$V'"'
+done |
+"$ARCH"/makeenv 40000 4000 > $NEW_ENV  ||
+    Error Error preparing new u-boot environment
+
+if $SHOW_NEW; then
+    $ECHO New configuration:
+    cat $NEW_ENV | "$ARCH"/readenv
+fi
+
+if $DO_WRITE; then
+    $ECHO Writing new u-boot environment...
+    make_writeable
+    write_mtd $NEW_ENV 1  &&
+    sync  &&
+    $ECHO Checking new u-boot environment.  &&
+    check_mem 0x40000 $NEW_ENV  ||
+        Error Failed to write new u-boot environment
+fi
