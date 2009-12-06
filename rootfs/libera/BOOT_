@@ -1,0 +1,7 @@
+# Options when no BOOT option selected: this is used to build the final
+# system.  Basically all we need is a network option with a bare interfaces
+# definition file.
+
+OPTIONS += network
+# The network will be configured later, during installation.
+NW_PORT = none

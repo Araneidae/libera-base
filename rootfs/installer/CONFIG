@@ -1,0 +1,17 @@
+# Configuration for automated Libera installer
+include $(TOP)/CONFIG
+include $(configdir)/../common/CONFIG.common
+include $(configdir)/../common/u-boot
+
+# Options for initramfs boot
+BOOT = initramfs
+IMAGE_ADDR = a2000000
+
+busybox_CONFIG = $(configdir)/busybox.config
+PACKAGES += mtd-utils
+
+final-install:
+	$(install) $(INSTALL_IMAGE) $(KERNEL_IMAGE) /
+	$(MAKE) -C $(TOP)/u-boot install-configure \
+            TARGET_DIR=$(sysroot)/installer COMPILERS=linux-arm_el
+	$(startup) $(configdir)/install-libera S999

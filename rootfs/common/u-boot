@@ -1,0 +1,10 @@
+# Configuration options common for all u-boot options (intramfs and nfs).
+
+BOOT_LOADER = u-boot
+TFTP_SERVER = serv3:/tftpboot
+
+MKIMAGE = $(U_BOOT_TOP)/mkimage
+
+KERNEL_NAME = uImage-libera-2.6.30.9
+KERNEL_ADDR = a0001000
+BOOTARGS = console=ttyS0,115200 mem=64M

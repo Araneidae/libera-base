@@ -1,0 +1,6 @@
+# Options for initramfs boot.
+
+include $(configdir)/../common/u-boot
+
+IMAGE_ADDR = a2000000
+OPTIONS += network-mtd

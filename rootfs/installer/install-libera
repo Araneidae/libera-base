@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Script to install libera on target system
+
+i=10
+while [ $i -gt 0 ]; do
+    echo 'Installing ...' $i
+    sleep 1
+    i=$((i-1))
+done
+
+echo 'Fake Installation complete'
+#reboot

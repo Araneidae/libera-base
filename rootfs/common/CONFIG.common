@@ -1,0 +1,17 @@
+# Common rootfs configuration shared among the libera and install targets.
+
+TOOLCHAIN = $(TOP)/toolchains/linux-arm_el
+
+# Essential base, required for operation
+PACKAGES += busybox
+busybox_VERSION = 1.15.2
+busybox_CONFIG = $(configdir)/busybox.config
+
+# By default we build all packages with thumb.
+CFLAGS = -O2 -mthumb
+
+# Configuration of console getty
+CONSOLE_BAUD = 115200
+CONSOLE_TTY = ttyS0
+
+ROOT_PASSWORD = Jungle

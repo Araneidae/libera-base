@@ -1,18 +1,6 @@
 # Configuration file for libera target.
-
-
-
-BOOT = initramfs
-# BOOT = nfs
-
+include $(TOP)/CONFIG
+include $(configdir)/../common/CONFIG.common
 include $(configdir)/PACKAGES
 include $(configdir)/SYSROOT
-include $(configdir)/ROOTFS
-
 include $(configdir)/BOOT_$(BOOT)
-
-ifeq ($(BOOT),nfs)
-    NETWORK = nfs
-else
-    NETWORK = mtd
-endif

@@ -1,0 +1,7 @@
+# Options when booting from nfs
+include $(configdir)/../common/u-boot
+
+NFS_SERVER = pc0013
+NFS_ROOTFS = /scratch/mga83/rootfs/libera
+
+NETWORK = nfs

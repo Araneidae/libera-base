@@ -1,36 +1,44 @@
 # Make file to build Libera root filesystem.
 
-TOP = $(CURDIR)/..
-COMPONENT = rootfs
-COMPILER = linux-arm_el
+export TOP = $(CURDIR)/..
+include $(TOP)/CONFIG
 include $(TOP)/scripts/COMMON
 
-export TOP
 
-TARGET = $(CURDIR)/$1
-#CONFIG = $(CURDIR)/CONFIG.rootfs
-TARGET_ROOT = $(BUILD_ROOT)/rootfs/$1
+# For maintenance targets, can be overridden on the command line.
+_BUILD ?= libera
 
-libera_TARGET    = $(CURDIR)/libera
-installer_TARGET = $(CURDIR)/installer
-libera_ROOT      = $(BUILD_ROOT)/rootfs/libera
-installer_ROOT   = $(BUILD_ROOT)/rootfs/installer
+# Default build is complete build of libera and installer packages.
+default: installer
 
-define rootfs
-$(ROOTFS)/rootfs $2 TARGET=$($1_TARGET) TARGET_ROOT=$($1_ROOT)
+
+KBUILD_OUTPUT := $(shell \
+    $(MAKE) -s -C $(KERNEL_TOP) TARGET=libera-2.6 print-build-dir)
+KERNEL_IMAGE = $(KBUILD_OUTPUT)/arch/arm/boot/uImage
+INSTALL_IMAGE = $(BUILD_ROOT)/rootfs/libera/image/imagefile.cpio
+
+
+# Builds the selected rootfs, called as
+#
+#   $(call ROOTFS,<target-name>,<action>[,<package>])
+#
+define ROOTFS
+$(ROOTFS_TOP)/rootfs $2 \
+    TARGET=$(CURDIR)/$1 TARGET_ROOT=$(BUILD_ROOT)/rootfs/$1
 endef
 
-rootfs: 
-	$(call rootfs,libera,make) BOOT=initramfs
+package:
+	$(call ROOTFS,$(_BUILD),package $(PACKAGE)) $(ACTION)
 
-packages:
-	$(call rootfs,libera,all)
+clean-all:
+	rm -rf $(BUILD_ROOT)/rootfs
 
-default: rootfs
+libera:
+	$(call ROOTFS,$@,make)
 
 installer:
-#	$(call rootfs,installer,all)
-	$(call rootfs,installer,make)
+	$(call ROOTFS,$@,make) $(call EXPORT,KERNEL_IMAGE INSTALL_IMAGE)
 
+installer: libera
 
-.PHONY: rootfs packages installer
+.PHONY: package clean-all libera installer
