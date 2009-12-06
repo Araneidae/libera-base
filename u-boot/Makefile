@@ -32,4 +32,10 @@ clean:
 	$(MAKE) -C mtd-rw clean
 	$(MAKE) -C tools clean
 
-.PHONY: clean clean-all
+# Special target to just install configure-boot
+install-configure:
+	$(MAKE) -C tools install TARGET_DIR=$(TARGET_DIR)
+	cp functions configure-boot $(TARGET_DIR)
+
+
+.PHONY: clean clean-all install-configure

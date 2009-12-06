@@ -34,13 +34,20 @@ Kernel driver for MSP430 voltage monitoring device.  Creates device
 Kernel driver for Libera.  Creates `/dev/libera.*` device nodes.
 
 
+`u-boot/`::
+U-boot updater.  Depends on a pre-built u-boot and generates the u-boot
+upgrader.
+
+
+
 Generated Components
 --------------------
 
-The following components are generated.
+The following components are generated in the `$(INSTALL_ROOT)` directory.
 
 U-boot upgrader::
-Tool for ensuring that u-boot is up to date.
+Tool for ensuring that u-boot is up to date and for managing the u-boot
+configuration.
 
 
 External Dependencies
