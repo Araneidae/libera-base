@@ -54,18 +54,11 @@ unset_variable()
 parse_set_variable()
 {
     # Split argument into VAR, VALUE pair.
-    local VAR="$(echo "$1" | sed -rn '/^([a-z]*)=.*$/{s//\1/;p;q;}')"
-    [ -n "$VAR" ]  ||  Error 'Invalid or no variable specified!'
+    local VAR="${1%%=*}"
     local VALUE="${1:${#VAR}}"
+    [ -n "$VAR" -a "${VALUE:0:1}" = = ]  ||
+        Error 'Invalid or no variable specified!'
     set_variable $VAR "${VALUE:1}"
-}
-
-# Reads the specified variable directly from flash
-read_config()
-{
-    cat /dev/mtd1 |
-    "$ARCH"/readenv |
-    sed -n '/^'$1'=/{s///;p;q;}'
 }
 
 

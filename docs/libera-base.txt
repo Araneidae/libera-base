@@ -39,6 +39,10 @@ U-boot updater.  Depends on a pre-built u-boot and generates the u-boot
 upgrader.
 
 
+`rootfs/`::
+Rootfs builder.
+
+
 
 Generated Components
 --------------------

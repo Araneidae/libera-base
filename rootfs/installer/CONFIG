@@ -10,8 +10,11 @@ IMAGE_ADDR = a2000000
 busybox_CONFIG = $(configdir)/busybox.config
 PACKAGES += mtd-utils
 
+EXTRA_LIBS =
+
 final-install:
 	$(install) $(INSTALL_IMAGE) $(KERNEL_IMAGE) /
 	$(MAKE) -C $(TOP)/u-boot install-configure \
             TARGET_DIR=$(sysroot)/installer COMPILERS=linux-arm_el
+	$(install) -m+x $(configdir)/configure-network /installer
 	$(startup) $(configdir)/install-libera S999

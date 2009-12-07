@@ -55,6 +55,15 @@ make_writeable()
 }
 
 
+# Reads the specified variable directly from flash
+read_config()
+{
+    cat /dev/mtd1 |
+    "$ARCH"/readenv |
+    sed -n '/^'$1'=/{s///;p;q;}'
+}
+
+
 [ "$(uname -m)" = armv5tel ]  ||
     Error This should be run on Libera
 

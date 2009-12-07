@@ -1,3 +1,4 @@
+mtd3    /var/opt        jffs2   noatime                                 0   0
 
 # Diamond specific mounts
 serv0005:/home2/libera/nfs /mnt/nfs nfs rw,intr                         0   2

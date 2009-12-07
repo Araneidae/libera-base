@@ -2,12 +2,40 @@
 
 # Script to install libera on target system
 
-i=10
-while [ $i -gt 0 ]; do
-    echo 'Installing ...' $i
-    sleep 1
-    i=$((i-1))
-done
+# First create mount points.
+mkdir -p /mnt/mtd3 /mnt/mtd4
 
-echo 'Fake Installation complete'
-#reboot
+# Erase the variable partition first so that we can mount it and log the
+# rest to it.
+flash_eraseall -j /dev/mtd3
+mount -t jffs2 mtd3 /mnt/mtd3
+
+# Log the rest to mtd3.
+#exec >/mnt/mtd3/install.log 2>&1
+
+# Install configured kernel to mtd2
+echo Installing the new kernel
+flashcp -v /uImage /dev/mtd2
+
+# Erase mtd4 and install new file system.
+echo Erasing target rootfs
+flash_eraseall -j /dev/mtd4
+mount -t jffs2 mtd4 /mnt/mtd4
+cd /mnt/mtd4
+echo Installing new file system
+cpio -i </imagefile.cpio
+
+# Copy the network configuration into the new file system.
+echo Configuring network
+/installer/configure-network
+
+# Update the u-boot configuration for the new installation.
+echo Updating u-boot configuration
+/installer/configure-boot -Vw \
+    -fipaddr -fnetmask -fgatewayip -fhostname \
+    -vbootargs='console=ttyS0,115200 ro root=mtd4 rootfstype=jffs2' \
+    -vbootcmd='bootm 80000'
+
+echo Installation complete, rebooting
+sync
+reboot

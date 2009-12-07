@@ -5,6 +5,6 @@ TFTP_SERVER = serv3:/tftpboot
 
 MKIMAGE = $(U_BOOT_TOP)/mkimage
 
-KERNEL_NAME = uImage-libera-2.6.30.9
+KERNEL_NAME = uImage-libera-$(KERNEL_RELEASE)
 KERNEL_ADDR = a0001000
 BOOTARGS = console=ttyS0,115200 mem=64M

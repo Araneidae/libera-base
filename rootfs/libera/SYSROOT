@@ -10,4 +10,5 @@ LDCONFIG = cross
 final-install:
         # Install the regular nfs mounts.
 	mkdir -p $(patsubst %, $(sysroot)/mnt/%, nfs prod work)
+	mkdir -p $(sysroot)/var/opt
 	cat $(configdir)/fstab >>$(sysroot)/etc/fstab

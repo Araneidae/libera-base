@@ -1,0 +1,78 @@
+#!/bin/sh
+
+# Script to coordinate the upgrade of Libera.
+
+HERE="$(dirname "$0")"
+U_BOOT="$HERE"/../u-boot-upgrade
+
+Error()
+{
+    echo >&2 "$(hostname): $@"
+    exit 1
+}
+
+
+
+INSTALL_SCRIPT=boot-script-installer.image
+TFTP_SERVER=172.23.194.1
+
+while getopts 'hs:t:' option; do
+    case "$option" in
+        h)  cat <<EOF
+Usage: $0 [-s<install-script>] [-t<tftp-server>] confirm
+
+Runs Libera upgrade script.  The following options can be specified:
+    -s: The default install script boot-script-installer.image must be
+        present on the specified TFTP server.
+    -t: The default TFTP server is $TFTP_SERVER; this can be overridden
+        here.  The server must be present.
+
+Before running the upgrade script it is important to ensure that the
+following files are already present on the TFTP server.  If the TFTP server
+cannot be reached or any of these files are missing the upgrade will fail
+and it will be necessary to reconfigure u-boot by connecting to the serial
+port.
+
+The following files must be present on the TFTP server at $TFTP_SERVER:
+
+    $INSTALL_SCRIPT
+        This is the u-boot installation script that will be executed to
+        load the two files below.
+        
+    uImage-libera-@@KERNEL_RELEASE@@
+        Kernel image that will be loaded by the installer.  This image is
+        also built into the installation image.
+        
+    imagefile-installer.cpio.gz
+        Installation image: this is a complete boot image.  After booting,
+        the Libera kernel and root file system will be upgraded and Libera
+        will reboot into the new system.
+
+Note that static network configuration will be preserved over the
+installation, but all other settings will be erased.
+EOF
+            exit 0
+            ;;
+        s)  INSTALL_SCRIPT="$OPTARG" ;;
+        t)  TFTP_SERVER="$OPTARG" ;;
+        *)  Error Invalid option.  Try -h for help.
+    esac
+done
+
+shift $((OPTIND-1))
+[ "$1" = confirm ]  ||
+    Error Try -h for help.
+
+
+# First check that the u-boot is properly upgraded
+"$U_BOOT"/update-u-boot -w ||
+    Error Something went wrong with u-boot update.
+
+# Configure to boot from installer
+"$U_BOOT"/configure-boot -w \
+    -dbootargs \
+    -vbootcmd="tftpboot a0000000 $INSTALL_SCRIPT && autoscr a0000000" \
+    -vserverip="$TFTP_SERVER"
+
+# We are ready to go!
+reboot
