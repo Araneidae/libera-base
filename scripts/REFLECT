@@ -25,16 +25,23 @@ clean: clean-$(COMPILER)
 clean-$(COMPILER):
 	rm -rf $$(O.$(COMPILER))
 
-default $(filter-out clean,$(MAKECMDGOALS)):: $$(O.$(COMPILER))
-	$(MAKE) -C $$(O.$(COMPILER)) -f $(TOP)/scripts/REFLECTOR \
-            TOP=$(TOP) COMPILER=$(COMPILER) \
-            MAKEFILE=$(CURDIR)/$(MAKEFILE) \
-            VPATH=$(CURDIR) O=$$(O.$(COMPILER)) CURDIR=$(CURDIR) $$@
+clean-all:: clean
+	rm -rf $$(INSTALL_O)
 
-.PHONY: default $(MAKECMDGOALS) clean clean-$(COMPILER)
+default $(filter-out clean clean-all,$(MAKECMDGOALS)):: $$(O.$(COMPILER))
+	VPATH=$(CURDIR) $(MAKE) \
+            -C $$(O.$(COMPILER)) -f $(TOP)/scripts/REFLECTOR \
+            TOP=$(TOP) COMPILER=$(COMPILER) COMPONENT=$(COMPONENT) \
+            MAKEFILE=$(CURDIR)/$(MAKEFILE) \
+            O=$$(O.$(COMPILER)) INSTALL_O=$(INSTALL_O) \
+            CURDIR=$(CURDIR) $$@
+
+.PHONY: $(MAKECMDGOALS) clean-$(COMPILER)
 endef
 
 
 default::
 
 $(foreach COMPILER,$(COMPILERS),$(eval $(EXPAND_makefile)))
+
+.PHONY: default clean clean-all

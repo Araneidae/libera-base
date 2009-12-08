@@ -7,6 +7,8 @@ include $(TOP)/scripts/COMPILE
 export CROSS_COMPILE
 export ARCH = arm
 
+# Make the version of Libera Base visible to the module being built.
+export LIBERA_BASE_VERSION
 
 # The kernel will have been built using the kernel build tool.  Ask it kindly
 # where it put the build; we need this for module builds!
@@ -25,8 +27,10 @@ $(O):
 	mkdir -p $(O)
 	ln -fs $(wildcard $(patsubst %,$(CURDIR)/%, *.[c,h] $(MAKEFILE))) $(O)
 
-default: $(O)
-	$(MAKE) -C $(KBUILD_OUTPUT) M=$(O)
+$(TARGETS): $(O)
+	$(MAKE) -C $(KBUILD_OUTPUT) M=$(O) 
+
+install: $(TARGETS)
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR)
 	cp $(patsubst %,$(O)/%,$(TARGETS)) $(TARGET_DIR)
@@ -36,5 +40,12 @@ default: $(O)
 # 	$(MAKE) -C $(KBUILD_OUTPUT) M=$(O) \
 #              INSTALL_MOD_PATH=$(TARGET_DIR) modules_install V=1
 
+default: $(TARGETS)
+
 clean:
 	rm -rf $(O)
+
+clean-all: clean
+	rm -rf $(TARGET_DIR)
+
+.PHONY: clean clean-all default

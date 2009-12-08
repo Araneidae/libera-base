@@ -4,6 +4,10 @@ ifndef COMPILER
 $(error Must define COMPILER first)
 endif
 
+CFLAGS += -std=gnu99
+CFLAGS += -Werror -Wall
+CFLAGS += -O2
+
 CROSS_COMPILE = $(BINUTILS_DIR)/bin/$(COMPILER_PREFIX)-
 
 include $(TOP)/toolchains/$(COMPILER)
@@ -18,7 +22,3 @@ STRIP   = $(CROSS_COMPILE)strip
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
 CPP     = $(CC) -E
-
-CFLAGS += -std=gnu99
-CFLAGS += -Werror -Wall
-CFLAGS += -O2

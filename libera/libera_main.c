@@ -197,7 +197,7 @@ MODULE_AUTHOR("Ales Bardorfer, Instrumentation Technologies");
 MODULE_DESCRIPTION("Instrumentation Technologies Libera driver");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("libera");
-MODULE_VERSION("DLS 0.1-dev");
+MODULE_VERSION("DLS " LIBERA_BASE_VERSION);
 
 module_param(iobase, long, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 MODULE_PARM_DESC (iobase, "I/O memory region base address (default 0x1400000)");

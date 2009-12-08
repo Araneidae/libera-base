@@ -27,8 +27,10 @@ default: $(PADFF)
 $(PADFF):
 	$(MAKE) -C tools COMPILERS=native padff
 
-clean:
+clean-all: clean
 	rm -rf $(TARGET_DIR)
+
+clean:
 	$(MAKE) -C mtd-rw clean
 	$(MAKE) -C tools clean
 
@@ -37,5 +39,6 @@ install-configure:
 	$(MAKE) -C tools install TARGET_DIR=$(TARGET_DIR)
 	cp functions configure-boot $(TARGET_DIR)
 
+install: default
 
-.PHONY: clean clean-all install-configure
+.PHONY: clean clean-all install-configure install

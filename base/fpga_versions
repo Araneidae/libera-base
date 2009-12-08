@@ -1,0 +1,16 @@
+FPGA_SR_VERSION = v2.02.3
+
+FPGA_DIR = /dls_sw/work/hardware/Libera/isa/fpga/ebpm
+FPGA_SR = $(FPGA_DIR)/$(ver)/main_diamond_sr.bin.dls.$(ver)
+
+
+# Storage Ring Electron and Brilliance FPGA versions
+FPGA_SR_EL = $(foreach ver,$(FPGA_SR_VERSION),$(FPGA_SR)).EL
+FPGA_SR_BR = $(foreach ver,$(FPGA_SR_VERSION),$(FPGA_SR)).BR
+
+# Booster FPGA version
+FPGA_BO_EL = 
+FPGA_BO_BR = 
+
+# These are the FPGAs that we'll actually be able to install.
+FPGA_LIST = FPGA_SR_EL FPGA_SR_BR

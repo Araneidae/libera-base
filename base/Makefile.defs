@@ -1,0 +1,13 @@
+TARGETS += fp fpga_init install-base notch1 notch2 polyphase_fir
+TARGETS += libera_sr libera_bo fpga_list
+
+include $(CURDIR)/fpga_versions
+
+TARGETS += $(foreach fpga,$(FPGA_LIST),$(notdir $($(fpga))))
+VPATH   += $(foreach fpga,$(FPGA_LIST),$(dir $($(fpga))))
+
+default: install
+
+
+fpga_list:
+	$(foreach fpga,$(FPGA_LIST),echo $(fpga)=$(notdir $($(fpga))) >>$@;)

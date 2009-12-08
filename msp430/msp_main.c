@@ -90,7 +90,7 @@ MODULE_AUTHOR("Ales Bardorfer, Instrumentation Technologies");
 MODULE_DESCRIPTION("Instrumentation Technologies MSP driver for Libera");
 MODULE_LICENSE("GPL");
 MODULE_SUPPORTED_DEVICE("msp");
-MODULE_VERSION("DLS 0.1-dev");
+MODULE_VERSION("DLS " LIBERA_BASE_VERSION);
 
 
 

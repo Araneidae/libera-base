@@ -6,4 +6,4 @@ EXPORT = $(foreach var,$(1),$(var)=$(call SAFE_QUOTE,$($(var))))
 
 # Target output.
 O = $(BUILD_ROOT)/$(COMPONENT)/$(COMPILER)
-INSTALL_O = $(TARGET_DIR)/$(COMPILER)
+INSTALL_O ?= $(TARGET_DIR)/$(COMPILER)

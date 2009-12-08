@@ -1,6 +1,6 @@
 # The following definitiions are required for assembling the final rootfs.
 
-ROOTFS_VERSION = DLS rootfs version 1.0
+ROOTFS_VERSION = DLS rootfs version $(LIBERA_BASE_VERSION)
 
 TERMS = xterm xterm-color screen vt100 vt102
 

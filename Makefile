@@ -4,7 +4,7 @@ default:
 
 
 DRIVERS = msp430 libera
-INSTALLER = u-boot rootfs
+INSTALLER = u-boot rootfs base
 
 
 ALL = $(DRIVERS) $(INSTALLER)
@@ -15,7 +15,6 @@ $(MAKE) -C $1 $2
 
 endef
 DO_MAKE = $(foreach DIR,$1,$(call _MAKE_ONE,$(DIR),$2))
-
 
 
 clean:
@@ -33,7 +32,12 @@ installer:
 docs:
 	$(call DO_MAKE,docs)
 
+$(ALL):
+	$(call DO_MAKE,$@,install)
 
-default:
+rootfs: u-boot
+
+default: $(ALL)
 
 .PHONY: default clean drivers installer docs
+.PHONY: $(ALL)
