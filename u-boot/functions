@@ -32,7 +32,7 @@ check_mem()
 {
     # *Try* setting pipefail, if we can, but ignore the error if it fails.
     set -o pipefail 2>/dev/null
-    "$ARCH"/readmem $1 0x40000 |
+    cat $1 |
     "$ARCH"/bindiff "$2"  &&
     # This last line is a bit absurd.  With Libera 1.46 bash (version 2.05b)
     # we don't have `set -o pipefail` available, so need to check readmem

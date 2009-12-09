@@ -70,7 +70,7 @@ make_writeable  &&
 $ECHO Writing new u-boot
 write_mtd "$U_BOOT_IMAGE" 0  &&
 sync  &&
-check_mem 0 "$U_BOOT_IMAGE"  ||
+check_mem /dev/mtd0 "$U_BOOT_IMAGE"  ||
 {
     echo >&2 $'\e[1;31m' !!!WARNING!!!  
     echo >&2 !!!
