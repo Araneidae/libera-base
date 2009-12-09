@@ -9,5 +9,6 @@ VPATH   += $(foreach fpga,$(FPGA_LIST),$(dir $($(fpga))))
 default: install
 
 
-fpga_list:
+fpga_list: $(CURDIR)/fpga_versions
+	rm -f $@
 	$(foreach fpga,$(FPGA_LIST),echo $(fpga)=$(notdir $($(fpga))) >>$@;)
