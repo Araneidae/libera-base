@@ -3,7 +3,7 @@
 default:
 
 
-DRIVERS = msp430 libera
+DRIVERS = drivers/msp430 drivers/libera
 INSTALLER = u-boot rootfs base
 
 
