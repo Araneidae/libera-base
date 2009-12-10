@@ -12,9 +12,24 @@ Error()
 }
 
 
+# Figure out the right TFTP server by inspecting the broadcast address.
+BROADCAST="$(
+    ifconfig eth0 |
+    sed -nr '/^eth0/{n; s/.*Bcast:([^ ]*) .*/\1/;p;q;}')"
+case "$BROADCAST" in
+    172.23.255.255)     # Lab address
+        TFTP_SERVER=172.23.240.3 ;;
+    172.23.207.255)     # Primary network
+        TFTP_SERVER=172.23.194.1 ;;
+    *)  echo >&2 Unrecognised broadcast address "$BROADCAST"
+        echo >&2 You will need to specify the TFTP server.
+        TFTP_SERVER=unknown
+        ;;
+esac
+
 
 INSTALL_SCRIPT=boot-script-installer.image
-TFTP_SERVER=172.23.194.1
+
 
 while getopts 'hs:t:' option; do
     case "$option" in
@@ -63,6 +78,8 @@ shift $((OPTIND-1))
 [ "$1" = confirm ]  ||
     Error Try -h for help.
 
+[ "$TFTP_SERVER" = unknown ] &&
+    Error Must specify TFTP server
 
 # First check that the u-boot is properly upgraded
 "$U_BOOT"/update-u-boot -w ||

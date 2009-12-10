@@ -13,6 +13,7 @@ mount -t jffs2 mtd3 /mnt/mtd3
 
 # Log the rest to mtd3.
 exec >/mnt/mtd3/install.log 2>&1
+echo Starting complete Libera upgrade
 
 # Install configured kernel to mtd2, but only if necessary
 if head -c $(stat -c%s /uImage) /dev/mtd2 | $BIN/bindiff /uImage; then

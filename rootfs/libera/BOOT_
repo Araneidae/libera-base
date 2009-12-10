@@ -5,3 +5,4 @@
 OPTIONS += network
 # The network will be configured later, during installation.
 NW_PORT = none
+RESOLV_CONF = none

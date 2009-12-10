@@ -36,16 +36,37 @@ compute_broadcast() { compute_elements $1 $2 '255 & ~(mask & ~ip)'; }
 
 IPADDR="$(read_config ipaddr)"
 NETMASK="$(read_config netmask)"
+NETWORK="$(compute_network $IPADDR $NETMASK)"
+GATEWAY="$(read_config gatewayip)"
+HOSTNAME="$(read_config hostname)"
 
+echo "Configuring network $IPADDR/$NETMASK"
 cat <<EOF >>/mnt/mtd4/etc/network/interfaces
 
 auto eth0
 iface eth0 inet static
     address $IPADDR
-    network $(compute_network $IPADDR $NETMASK)
+    network $NETWORK
     netmask $NETMASK
     broadcast $(compute_broadcast $IPADDR $NETMASK)
-    gateway $(read_config gatewayip)
 EOF
 
-echo "$(read_config hostname)" >/mnt/mtd4/etc/hostname
+if [ -n "$GATEWAY" ]; then
+    echo "Configuring gateway $GATEWAY"
+    echo "    gateway $GATEWAY" >>/mnt/mtd4/etc/network/interfaces
+fi
+
+echo "Configuring host name $HOSTNAME"
+echo "$HOSTNAME" >/mnt/mtd4/etc/hostname
+
+# Now set up the resolv.conf and extra mounts.  We need to identify our
+# network at this point.
+case "$NETWORK" in
+    172.23.240.0)   network=lab ;;
+    172.23.192.0)   network=pri ;;
+    *)  Error 'Do not recognise network, resolv.conf not configured.'
+esac
+
+echo "Configuring resolv.conf and local mounts for $network"
+echo "FSTABS=/etc/fstab.$network" >/mnt/mtd4/etc/default/mount-local
+ln -s resolv.conf.$network /mnt/mtd4/etc/resolv.conf

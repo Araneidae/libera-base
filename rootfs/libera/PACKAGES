@@ -5,8 +5,10 @@ PACKAGES += ntp dropbear portmap
 
 # Useful debugging tools
 PACKAGES += strace lsof
-# Useful to have.
-PACKAGES += nano mtd-utils libpcap tcpdump
+# Needed for subsequence maintenance and possible upgrades
+PACKAGES += mtd-utils 
+# Useful for network analysis.
+PACKAGES += libpcap tcpdump
 
 # Dropbear is a little slow when built with thumb, so we override that.
 CFLAGS_dropbear = -O2
