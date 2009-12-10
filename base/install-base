@@ -70,3 +70,8 @@ mkdir -p "$MODULES"
 cp "$HERE"/../msp/msp.ko "$MODULES"
 cp "$HERE"/../libera/libera.ko "$MODULES"
 depmod
+
+# Install the network reconfiguration tool
+cp "$HERE"/configure-network /usr/sbin
+mkdir -p /usr/share/base
+cp "$HERE"/libera-ips /usr/share/base

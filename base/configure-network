@@ -1,0 +1,116 @@
+#!/bin/sh
+
+# Configuration tool for reconfiguring Libera network configuration.
+
+
+Error()
+{
+    echo >&2 "$@"
+    exit 1
+}
+
+
+# Looks up the specified host name in our table of predefined addresses.
+lookup_hostname()
+{
+    if [ "${1:0:11}" = TS-DI-EBPM- ]; then
+        # Must be a lab machine
+        local IP="${1:11}"
+        echo -n 172.23.252.${IP#0}
+    else
+        # Look it up in our table of addresses.
+        cat /usr/share/base/libera-ips |
+        sed -n '/^'$1' /{s///;p;q;}'
+    fi
+}
+
+
+# Default configuration.
+NETMASK=255.255.240.0
+GATEWAY=
+
+WRITE_CONFIG=false
+RESTART_NETWORK=false
+while getopts 'hm:g:wr' option; do
+    case "$option" in
+        h)  cat <<EOF
+Usage: $0 [options] <new host name> [<new IP address>]
+
+Reconfigure network configuration to use the new host name.  If possible the
+host name will be looked up or computed, otherwise a new IP address can also
+be specified.
+
+Options:
+    -m: Specify new net mask
+    -g: Specify new gateway
+    -w  Write new configuration; otherwise the new configuration is displayed
+    -r  Restart network after reconfiguration.
+EOF
+            exit 0 ;;
+        m)  NETMASK="$OPTARG" ;;
+        g)  GATEWAY="$OPTARG" ;;
+        w)  WRITE_CONFIG=true ;;
+        r)  RESTART_NETWORK=true ;;
+        *)  Error Invalid option.  Try -h for help. ;;
+    esac
+done
+shift $((OPTIND-1))
+
+# Parse one or two arguments: host name and address.
+[ $# -gt 0 -a $# -le 2 ]  ||  Error Try -h for help.
+HOSTNAME="$1"
+if [ $# = 2 ]; then
+    IPADDR="$2"
+else
+    # Compute IP address from host name
+    IPADDR="$(lookup_hostname "$HOSTNAME")"
+    [ -n "$IPADDR" ]  ||
+        Error Unable to find IP address for host "$HOSTNAME"
+fi
+
+
+# Compute the network and broadcast.  
+eval $(ipcalc -nb $IPADDR $NETMASK)
+
+# Figure out which network we're on: this is used to configure the extra
+# mounts and resolv.conf.
+case "$NETWORK" in
+    172.23.240.0)
+        [ -n "$GATEWAY" ]  ||  GATEWAY=172.23.240.254
+        network=lab ;;
+    172.23.192.0)
+        network=pri ;;
+    *)  echo >&2 "Warning: network $NETWORK not recognised." ;;
+esac
+
+NEW_CONFIG="auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+    address $IPADDR
+    network $NETWORK
+    netmask $NETMASK
+    broadcast $BROADCAST"
+[ -n "$GATEWAY" ]  &&  NEW_CONFIG="$NEW_CONFIG"$'\n'"    gateway $GATEWAY"
+
+
+if $WRITE_CONFIG; then
+    # Now do the requested reconfiguration
+    mount -o remount,rw /
+    trap 'mount -o remount,ro /' EXIT
+
+    echo "$NEW_CONFIG" >/etc/network/interfaces
+    echo "$HOSTNAME" >/etc/hostname
+    if [ -n "$network" ]; then
+        echo "FSTABS=/etc/fstab.$network" >/etc/default/mount-local
+        ln -fs resolv.conf.$network /etc/resolv.conf
+    fi
+else
+    echo "$NEW_CONFIG"
+    echo "hostname = $HOSTNAME"
+    echo "network = $network"
+fi
+
+# Finally, if requested, restart the network.
+$RESTART_NETWORK  &&  /etc/init.d/network restart

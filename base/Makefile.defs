@@ -1,5 +1,6 @@
 TARGETS += fp fpga_init install-base notch1 notch2 polyphase_fir
 TARGETS += libera_sr libera_bo fpga_list
+TARGETS += configure-network libera-ips
 
 include $(CURDIR)/fpga_versions
 
