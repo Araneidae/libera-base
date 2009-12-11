@@ -12,7 +12,8 @@ TFTP_DIR = $(TARGET_DIR)/tftp
 
 # For maintenance targets, can be overridden on the command line.
 BUILD ?= libera
-unexport BUILD
+PACKAGE ?= busybox
+unexport BUILD PACKAGE
 
 
 default: 
@@ -39,8 +40,8 @@ package:
 	$(call ROOTFS,$(BUILD),package $(PACKAGE)) $(ACTION)
 
 menuconfig:
-	$(call ROOTFS,libera,package busybox) menuconfig
-	$(call ROOTFS,libera,package busybox) saveconfig
+	$(call ROOTFS,$(BUILD),package busybox) menuconfig
+	$(call ROOTFS,$(BUILD),package busybox) saveconfig
 
 clean:
 	rm -rf $(O)
@@ -61,6 +62,7 @@ default: installer libera upgrade-libera
 	sed <upgrade-libera >$(TARGET_DIR)/upgrade-libera \
             's/@@KERNEL_RELEASE@@/$(KERNEL_RELEASE)/'
 	chmod +x $(TARGET_DIR)/upgrade-libera
+	cp upgrade-defaults $(TARGET_DIR)
 	cp $(O)/installer/image/boot-script-installer.image $(TFTP_DIR)
 	cp $(KERNEL_IMAGE) $(TFTP_DIR)/uImage-libera-$(KERNEL_RELEASE)
 	cp $(O)/installer/image/imagefile.cpio.gz \

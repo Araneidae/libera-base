@@ -1,0 +1,20 @@
+# Site specific default definitions for upgrade-libera script
+
+# Figure out the right TFTP server by inspecting the broadcast address.
+BROADCAST="$(
+    ifconfig eth0 |
+    sed -nr '/^eth0/{n; s/.*Bcast:([^ ]*) .*/\1/;p;q;}')"
+case "$BROADCAST" in
+    172.23.255.255)     # Lab address
+        TFTP_SERVER=172.23.240.3 ;;
+    172.23.207.255)     # Primary network
+        TFTP_SERVER=172.23.194.1 ;;
+    *)  echo >&2 Unrecognised broadcast address "$BROADCAST"
+        echo >&2 You will need to specify the TFTP server.
+        TFTP_SERVER=unknown
+        ;;
+esac
+
+
+INSTALL_SCRIPT=boot-script-installer.image
+POST_SCRIPT=libera-post-script.tgz

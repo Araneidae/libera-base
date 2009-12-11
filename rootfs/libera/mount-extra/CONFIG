@@ -1,4 +1,4 @@
 # Configuration to mount extra fstab like files.
 
 option:
-	$(startup) $(optiondir)/mount-local S125 K875
+	$(startup) $(optiondir)/mount-extra S125 

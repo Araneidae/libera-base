@@ -1,0 +1,37 @@
+#!/bin/sh
+
+# This script is run once immediately after installation
+
+echo Running post installation customisation
+
+on_exit()
+{
+    rm /etc/rc.d/S999post-install /etc/post-install
+    mount -o remount,rw /
+}
+
+# Only run this stuff once, even if it goes wrong!
+mount -o remount,rw /  
+trap on_exit EXIT 
+
+
+. /etc/post-install
+: "${TFTP_SERVER:?Specify TFTP server to use}"
+: "${POST_SCRIPT:?Specify post installation script to run}"
+
+
+echo "Fetching '$POST_SCRIPT' from '$TFTP_SERVER'"  &&
+tftp -g -r"$POST_SCRIPT" -l/tmp/post-install.tgz "$TFTP_SERVER"  &&
+
+echo "Extracting startup script"  &&
+mkdir /tmp/post-install  &&
+tar xzf /tmp/post-install.tgz -C /tmp/post-install  &&
+rm /tmp/post-install.tgz  &&
+
+echo "Checking for correct startup script"  &&
+[ -x /tmp/post-install/post-install.sh ]  &&
+
+echo "About to run Post Install script"  &&
+cd /tmp/post-install  &&
+./post-install.sh  &&
+rm -rf /tmp/post-install

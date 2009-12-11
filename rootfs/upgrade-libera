@@ -12,35 +12,25 @@ Error()
 }
 
 
-# Figure out the right TFTP server by inspecting the broadcast address.
-BROADCAST="$(
-    ifconfig eth0 |
-    sed -nr '/^eth0/{n; s/.*Bcast:([^ ]*) .*/\1/;p;q;}')"
-case "$BROADCAST" in
-    172.23.255.255)     # Lab address
-        TFTP_SERVER=172.23.240.3 ;;
-    172.23.207.255)     # Primary network
-        TFTP_SERVER=172.23.194.1 ;;
-    *)  echo >&2 Unrecognised broadcast address "$BROADCAST"
-        echo >&2 You will need to specify the TFTP server.
-        TFTP_SERVER=unknown
-        ;;
-esac
+. "$HERE"/upgrade-defaults
 
 
-INSTALL_SCRIPT=boot-script-installer.image
-
-
-while getopts 'hs:t:' option; do
+while getopts 'hs:t:p:' option; do
     case "$option" in
         h)  cat <<EOF
-Usage: $0 [-s<install-script>] [-t<tftp-server>] confirm
+Usage: $0 [<options>] confirm
 
 Runs Libera upgrade script.  The following options can be specified:
-    -s: The default install script boot-script-installer.image must be
+    -s<install-script>
+        The default install script boot-script-installer.image must be
         present on the specified TFTP server.
-    -t: The default TFTP server is $TFTP_SERVER; this can be overridden
+    -t<tftp-server>
+        The configured TFTP server is $TFTP_SERVER; this can be overridden
         here.  The server must be present.
+    -p<post-install-script>
+        The configured post installation script is $POST_SCRIPT,
+        which can be overridden here.  If this is empty then no post
+        installation will be done.
 
 Before running the upgrade script it is important to ensure that the
 following files are already present on the TFTP server.  If the TFTP server
@@ -63,6 +53,11 @@ The following files must be present on the TFTP server at $TFTP_SERVER:
         the Libera kernel and root file system will be upgraded and Libera
         will reboot into the new system.
 
+    $POST_SCRIPT
+        Post installation script: this is a file in tar.gz format containing
+        at least an executable file post-script.sh.  This will be executed
+        immediately after successfully booting Libera for the first time.
+
 Note that static network configuration will be preserved over the
 installation, but all other settings will be erased.
 EOF
@@ -70,9 +65,11 @@ EOF
             ;;
         s)  INSTALL_SCRIPT="$OPTARG" ;;
         t)  TFTP_SERVER="$OPTARG" ;;
+        p)  POST_SCRIPT="$OPTARG" ;;
         *)  Error Invalid option.  Try -h for help.
     esac
 done
+
 
 shift $((OPTIND-1))
 [ "$1" = confirm ]  ||
@@ -89,7 +86,7 @@ shift $((OPTIND-1))
 "$U_BOOT"/configure-boot -w \
     -dbootargs \
     -vbootcmd="tftpboot a0000000 $INSTALL_SCRIPT && autoscr a0000000" \
-    -vserverip="$TFTP_SERVER"
+    -vserverip="$TFTP_SERVER" -vpostscript="$POST_SCRIPT"
 
 # We are ready to go!
 reboot

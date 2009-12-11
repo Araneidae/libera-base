@@ -35,10 +35,11 @@ cpio -i </imagefile.cpio
 echo Configuring network
 /installer/configure-network
 
-# Update the u-boot configuration for the new installation.
+# Update the u-boot configuration for the new installation.  We carry
+# everything across apart from the boot instructions.
 echo Updating u-boot configuration
 /installer/configure-boot -Vw \
-    -fipaddr -fnetmask -fgatewayip -fhostname \
+    -fipaddr -fnetmask -fgatewayip -fhostname -fserverip \
     -vbootargs='console=ttyS0,115200 ro root=mtd4 rootfstype=jffs2' \
     -vbootcmd='bootm 80000'
 

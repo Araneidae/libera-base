@@ -4,12 +4,12 @@ ROOTFS_VERSION = DLS rootfs version $(LIBERA_BASE_VERSION)
 
 TERMS = xterm xterm-color screen vt100 vt102
 
-OPTIONS += $(configdir)/mount-local ldconfig
+OPTIONS += $(configdir)/mount-extra ldconfig
 LDCONFIG = cross
 
 final-install:
-        # Install the regular nfs mounts.
-	mkdir -p $(patsubst %, $(sysroot)/mnt/%, nfs prod work)
+        # Mount /dev/mtd3 as /var/opt for a writeable partition.
 	mkdir -p $(sysroot)/var/opt
 	cat $(configdir)/fstab >>$(sysroot)/etc/fstab
-	$(install-files) $(configdir)/file-list
+        # Trigger post-installation configuration
+	$(startup) $(configdir)/post-install S999
