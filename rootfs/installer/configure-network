@@ -36,6 +36,7 @@ echo "$HOSTNAME" >/mnt/mtd4/etc/hostname
 # Finally configure the post installation script.
 TFTP_SERVER="$(read_config serverip)"
 POST_SCRIPT="$(read_config postscript)"
+SCRIPT_ARGS="$(read_config scriptargs)"
 
 echo "Configuring post install: "
 echo "  TFTP: $TFTP_SERVER,"
@@ -43,4 +44,5 @@ echo "  script: $POST_SCRIPT"
 [ -n "$POST_SCRIPT" ]  &&  cat <<EOF >/mnt/mtd4/etc/post-install
 TFTP_SERVER='$TFTP_SERVER'
 POST_SCRIPT='$POST_SCRIPT'
+SCRIPT_ARGS='$SCRIPT_ARGS'
 EOF

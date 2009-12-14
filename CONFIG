@@ -14,6 +14,8 @@ ROOTFS_TOP = $(TOP)/../rootfs
 
 # The u-boot image to be installed is here.
 U_BOOT_TOP = /dls_sw/targetOS/u-boot/xcep
+# All installation images are uploaded to this TFTP server
+TFTP_SERVER = serv3:/tftpboot
 
 # Version identification: present in rootfs and in drivers.
 LIBERA_BASE_VERSION = 1.0-dev

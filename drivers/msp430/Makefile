@@ -1,4 +1,4 @@
-TOP = $(CURDIR)/..
+TOP = $(CURDIR)/../..
 
 COMPONENT = msp
 MAKEFILE = Kbuild

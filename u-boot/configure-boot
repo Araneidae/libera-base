@@ -6,11 +6,6 @@ HERE="$(dirname "$0")"
 . "$HERE"/functions
 
 
-# DEFAULT_SERVER_ADDRESS=172.23.240.3     # In the lab
-DEFAULT_serverip=172.23.194.1     # On the machine
-
-
-
 # Assigns to a u-boot variable and adds it to list of variables.  Called as
 #
 #   set_variable <var> <value>
@@ -90,9 +85,6 @@ set_variable bootargs "$(cat /proc/cmdline)"
 set_variable bootcmd 'bootm 80000'
 set_variable hostname "$(hostname)"
 
-# Read default serverip (used for tftpboot) from configuration if possible.
-set_variable serverip "$(read_config serverip)"
-[ -z "$serverip" ]  &&  serverip=$DEFAULT_serverip
 
 
 SHOW_CURRENT=false

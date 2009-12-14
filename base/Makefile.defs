@@ -2,14 +2,25 @@ TARGETS += fp fpga_init install-base notch1 notch2 polyphase_fir
 TARGETS += libera_sr libera_bo fpga_list
 TARGETS += configure-network libera-ips
 
+default: install
+
+
+# Include FGPA images in the base build.
 include $(CURDIR)/fpga_versions
 
 TARGETS += $(foreach fpga,$(FPGA_LIST),$(notdir $($(fpga))))
 VPATH   += $(foreach fpga,$(FPGA_LIST),$(dir $($(fpga))))
 
-default: install
-
-
 fpga_list: $(CURDIR)/fpga_versions
 	rm -f $@
 	$(foreach fpga,$(FPGA_LIST),echo $(fpga)=$(notdir $($(fpga))) >>$@;)
+
+
+# Assemble the post installation script.
+TARGETS += libera-post-install.tgz
+POST_INSTALL_FILES = $(wildcard $(CURDIR)/post-install/*)
+libera-post-install.tgz: $(POST_INSTALL_FILES)
+	tar czf $@ -C $(CURDIR)/post-install $(notdir $(POST_INSTALL_FILES))
+ifdef TFTP_SERVER
+	scp $@ $(TFTP_SERVER)
+endif

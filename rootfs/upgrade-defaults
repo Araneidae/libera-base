@@ -17,4 +17,18 @@ esac
 
 
 INSTALL_SCRIPT=boot-script-installer.image
-POST_SCRIPT=libera-post-script.tgz
+
+# Post installation script
+POST_SCRIPT=libera-post-install.tgz
+
+pre_upgrade()
+{
+    if [ -e /opt/state/$(hostname).state ]; then
+        cp /opt/state/$(hostname).state /mnt/nfs/state/  ||
+            Error 'Unable to save state file'
+    fi
+
+    # This needs to match base/post-install/post-install.sh
+    [ "$SCRIPT_ARGS" = SR -o "$SCRIPT_ARGS" = BO ]  ||
+        Error Invalid script argument: must be SR or BO
+}

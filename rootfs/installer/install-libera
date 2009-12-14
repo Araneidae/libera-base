@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Script to install libera on target system
+
 BIN=/installer/linux-arm_el
 
 # First create mount points.
@@ -8,11 +9,14 @@ mkdir -p /mnt/mtd3 /mnt/mtd4
 
 # Erase the variable partition first so that we can mount it and log the
 # rest to it.
+echo Erasing mtd3
 flash_eraseall -j /dev/mtd3
 mount -t jffs2 mtd3 /mnt/mtd3
 
 # Log the rest to mtd3.
 exec >/mnt/mtd3/install.log 2>&1
+# Let anyone watching on the console see what's going on
+tail -f /mnt/mtd3/install.log >/dev/ttyS0 &
 echo Starting complete Libera upgrade
 
 # Install configured kernel to mtd2, but only if necessary

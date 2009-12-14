@@ -12,13 +12,14 @@ Error()
 }
 
 
+pre_upgrade() {:;}  # Default pre-upgrade action: do nothing 
 . "$HERE"/upgrade-defaults
 
 
 while getopts 'hs:t:p:' option; do
     case "$option" in
         h)  cat <<EOF
-Usage: $0 [<options>] confirm
+Usage: $0 [<options>] confirm [<post-install-arg>]
 
 Runs Libera upgrade script.  The following options can be specified:
     -s<install-script>
@@ -75,6 +76,8 @@ shift $((OPTIND-1))
 [ "$1" = confirm ]  ||
     Error Try -h for help.
 
+SCRIPT_ARGS="$2"
+
 [ "$TFTP_SERVER" = unknown ] &&
     Error Must specify TFTP server
 
@@ -82,11 +85,16 @@ shift $((OPTIND-1))
 "$U_BOOT"/update-u-boot -w ||
     Error Something went wrong with u-boot update.
 
+# Run the pre-upgrade action before we finally commit
+pre_upgrade  ||
+    Error Pre upgrade failed
+
 # Configure to boot from installer
 "$U_BOOT"/configure-boot -w \
     -dbootargs \
     -vbootcmd="tftpboot a0000000 $INSTALL_SCRIPT && autoscr a0000000" \
-    -vserverip="$TFTP_SERVER" -vpostscript="$POST_SCRIPT"
+    -vserverip="$TFTP_SERVER" -vpostscript="$POST_SCRIPT" \
+    -vscriptargs="$SCRIPT_ARGS"
 
 # We are ready to go!
-reboot
+reboot -f

@@ -24,7 +24,3 @@ INETD_ENABLE = y
 # All Liberas are installed with the same ssh host key.  This will save
 # annoyances when moving machines around.
 DROPBEAR_KEYS = $(foreach key,dss rsa,$(configdir)/dropbear_$(key)_host_key)
-
-# ntp:
-# The ntp configuration should be set up by post-install.
-NTP_CONF = none

@@ -28,6 +28,19 @@ grep -q '^DLS rootfs' /etc/version  ||
 
 . "$HERE"/fpga_list
 
+REMOUNT_RW=false
+while getopts 'hw' option; do
+    case "$option" in
+        h)  cat <<EOF
+Usage: $0 [-w] <location>
+EOF
+            exit 0
+            ;;
+        w)  REMOUNT_RW=true ;;
+        *)  Error Invalid option.  Try -h for help.
+    esac
+done
+
 
 if detect_brilliance; then
     RF_BOARD=BR
@@ -36,8 +49,10 @@ else
 fi
 
 case "$1" in
-    sr) FPGA=FPGA_SR_$RF_BOARD ;;
-    bo) FPGA=FPGA_BO_$RF_BOARD ;;
+    SR) FPGA=FPGA_SR_$RF_BOARD
+        PLACE=sr ;;
+    BO) FPGA=FPGA_BO_$RF_BOARD
+        PLACE=bo ;;
     *)  Error Must specify location correctly: sr or bo
 esac
 eval 'FPGA="$'$FPGA'"'
@@ -45,8 +60,10 @@ eval 'FPGA="$'$FPGA'"'
 
 # The rootfs should normally be read only, so remount it for our operations
 # and put it back again afterwards.
-mount -o remount,rw /
-trap 'mount -o remount,ro /' EXIT
+if $REMOUNT_RW; then
+    mount -o remount,rw /
+    trap 'mount -o remount,ro /' EXIT
+fi
 
 # Prepare the complete directory tree, including the state directory required
 # by the EPICS driver.
@@ -62,7 +79,7 @@ ln -fsn $FPGA /opt/lib/main_diamond_sr.bin
 
 # Install the libera configuration
 cp "$HERE"/libera_sr "$HERE"/libera_bo /etc/libera
-ln -fsn libera_$1 /etc/libera/libera
+ln -fsn libera_$PLACE /etc/libera/libera
 
 # Install the drivers.
 MODULES="/lib/modules/$(uname -r)"
@@ -72,6 +89,5 @@ cp "$HERE"/../libera/libera.ko "$MODULES"
 depmod
 
 # Install the network reconfiguration tool
-cp "$HERE"/configure-network /usr/sbin
-mkdir -p /usr/share/base
-cp "$HERE"/libera-ips /usr/share/base
+cp "$HERE"/configure-network /opt/bin
+cp "$HERE"/libera-ips /opt/lib

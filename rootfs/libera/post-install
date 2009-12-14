@@ -6,8 +6,8 @@ echo Running post installation customisation
 
 on_exit()
 {
-    rm /etc/rc.d/S999post-install /etc/post-install
-    mount -o remount,rw /
+    rm -f /etc/rc.d/S999post-install
+    mount -o remount,ro /
 }
 
 # Only run this stuff once, even if it goes wrong!
@@ -33,5 +33,5 @@ echo "Checking for correct startup script"  &&
 
 echo "About to run Post Install script"  &&
 cd /tmp/post-install  &&
-./post-install.sh  &&
-rm -rf /tmp/post-install
+./post-install.sh "$SCRIPT_ARGS"  &&
+rm -rf /tmp/post-install /etc/post-install
