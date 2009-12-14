@@ -7,7 +7,6 @@ include $(configdir)/../common/u-boot
 BOOT = initramfs
 IMAGE_ADDR = a2000000
 
-busybox_CONFIG = $(configdir)/busybox.config
 PACKAGES += mtd-utils
 
 EXTRA_LIBS =

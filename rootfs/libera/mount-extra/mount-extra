@@ -23,7 +23,7 @@ do_stop()
     for fstab in $FSTABS; do
         sed "$STRIP" $fstab |
         while read spec file type opts rest; do
-            umount -f $file
+            umount -fl $file
         done
     done
 }

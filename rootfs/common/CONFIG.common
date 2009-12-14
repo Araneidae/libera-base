@@ -4,7 +4,7 @@ TOOLCHAIN = $(TOP)/toolchains/linux-arm_el
 
 # Essential base, required for operation
 PACKAGES += busybox
-busybox_VERSION = 1.15.2
+busybox_VERSION = 1.15.3
 busybox_CONFIG = $(configdir)/busybox.config
 
 # By default we build all packages with thumb.
