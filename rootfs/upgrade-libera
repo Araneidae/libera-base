@@ -12,26 +12,36 @@ Error()
 }
 
 
-pre_upgrade() {:;}  # Default pre-upgrade action: do nothing 
+INSTALL_SCRIPT='boot-script-installer-@@LIBERA_BASE_VERSION@@.image'
+
+
+pre_upgrade() { :; }  # Default pre-upgrade action: do nothing
+TFTP_PREFIX=
+
 . "$HERE"/upgrade-defaults
 
 
-while getopts 'hs:t:p:' option; do
+while getopts 'hs:t:i:p:' option; do
     case "$option" in
         h)  cat <<EOF
 Usage: $0 [<options>] confirm [<post-install-arg>]
 
 Runs Libera upgrade script.  The following options can be specified:
     -s<install-script>
-        The default install script boot-script-installer.image must be
-        present on the specified TFTP server.
+        The install script is $INSTALL_SCRIPT,
+        and can be overridden here.  This file must be present on
+        the specified TFTP server.
     -t<tftp-server>
         The configured TFTP server is $TFTP_SERVER; this can be overridden
-        here.  The server must be present.
-    -p<post-install-script>
-        The configured post installation script is $POST_SCRIPT,
+        here.  The server must be present.  This must be an decimal dotted
+        IP address.
+    -i<post-install-script>
+        The post installation script is $POST_SCRIPT,
         which can be overridden here.  If this is empty then no post
         installation will be done.
+    -p<tftp-prefix>
+        The tftp prefix is appended to each file fetched from the tftp
+        server.  The current prefix is: '$TFTP_PREFIX'.
 
 Before running the upgrade script it is important to ensure that the
 following files are already present on the TFTP server.  If the TFTP server
@@ -41,20 +51,20 @@ port.
 
 The following files must be present on the TFTP server at $TFTP_SERVER:
 
-    $INSTALL_SCRIPT
+    $TFTP_PREFIX$INSTALL_SCRIPT
         This is the u-boot installation script that will be executed to
         load the two files below.
         
-    uImage-libera-@@KERNEL_RELEASE@@
+    ${TFTP_PREFIX}uImage-libera-@@KERNEL_RELEASE@@
         Kernel image that will be loaded by the installer.  This image is
         also built into the installation image.
         
-    imagefile-installer.cpio.gz
+    ${TFTP_PREFIX}imagefile-installer-@@LIBERA_BASE_VERSION@@.cpio.gz
         Installation image: this is a complete boot image.  After booting,
         the Libera kernel and root file system will be upgraded and Libera
         will reboot into the new system.
 
-    $POST_SCRIPT
+    $TFTP_PREFIX$POST_SCRIPT
         Post installation script: this is a file in tar.gz format containing
         at least an executable file post-script.sh.  This will be executed
         immediately after successfully booting Libera for the first time.
@@ -66,7 +76,8 @@ EOF
             ;;
         s)  INSTALL_SCRIPT="$OPTARG" ;;
         t)  TFTP_SERVER="$OPTARG" ;;
-        p)  POST_SCRIPT="$OPTARG" ;;
+        i)  POST_SCRIPT="$OPTARG" ;;
+        p)  TFTP_PREFIX="$OPTARG" ;;
         *)  Error Invalid option.  Try -h for help.
     esac
 done
@@ -90,11 +101,13 @@ pre_upgrade  ||
     Error Pre upgrade failed
 
 # Configure to boot from installer
+[ -n "$POST_SCRIPT" ]  &&  POST_SCRIPT="$TFTP_PREFIX$POST_SCRIPT"
+BOOT_CMD="tftpboot a0000000 $TFTP_PREFIX$INSTALL_SCRIPT && autoscr a0000000"
 "$U_BOOT"/configure-boot -w \
     -dbootargs \
-    -vbootcmd="tftpboot a0000000 $INSTALL_SCRIPT && autoscr a0000000" \
+    -vbootcmd="$BOOT_CMD" \
     -vserverip="$TFTP_SERVER" -vpostscript="$POST_SCRIPT" \
-    -vscriptargs="$SCRIPT_ARGS"
+    -vscriptargs="$SCRIPT_ARGS" -vtftpprefix="$TFTP_PREFIX"
 
 # We are ready to go!
 reboot -f

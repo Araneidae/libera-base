@@ -7,8 +7,8 @@ cd "$(dirname "$0")"
 
 SCRIPT_ARGS="$1"
 
-INSTALL_BASE=/mnt/nfs/testing/libera-upgrade
-LIBERA_BASE=/mnt/nfs/testing/ioc
+INSTALL_BASE=/mnt/nfs/upgrade-DLS
+LIBERA_BASE=/mnt/nfs/upgrade-DLS/ioc
 PLACE="$SCRIPT_ARGS"
 
 
@@ -53,7 +53,9 @@ ln -s resolv.conf.$network /etc/resolv.conf
 #   - type identifier: SR or BO
 echo Installing Libera base from "$INSTALL_BASE"
 "$INSTALL_BASE"/base/install-base $PLACE
+
 echo Installing Libera from "$LIBERA_BASE"
 [ -e /mnt/nfs/state/$(hostname).state ]  &&
-    cp /mnt/nfs/state/$(hostname).state ]  /opt/state
+    cp /mnt/nfs/state/$(hostname).state /opt/state
+[ "$PLACE" = BO ]  &&  PLACE=BR     # Hack for Libera install
 "$LIBERA_BASE"/install_d/libera-install-ioc -fas $PLACE

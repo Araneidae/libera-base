@@ -17,10 +17,11 @@ fpga_list: $(CURDIR)/fpga_versions
 
 
 # Assemble the post installation script.
-TARGETS += libera-post-install.tgz
-POST_INSTALL_FILES = $(wildcard $(CURDIR)/post-install/*)
-libera-post-install.tgz: $(POST_INSTALL_FILES)
-	tar czf $@ -C $(CURDIR)/post-install $(notdir $(POST_INSTALL_FILES))
+POST_INSTALL = $(TFTP_DIR)/libera-post-install-$(LIBERA_BASE_VERSION).tgz
+$(POST_INSTALL): $(wildcard $(CURDIR)/post-install/*)
+	tar czf $@ -C $(CURDIR)/post-install $(notdir $^)
 ifdef TFTP_SERVER
 	scp $@ $(TFTP_SERVER)
 endif
+
+install: $(POST_INSTALL)

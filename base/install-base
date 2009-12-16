@@ -74,8 +74,12 @@ ln -fsn /var/opt/state /opt/state
 # Install the FPGA images and support tools
 cp "$HERE"/fp "$HERE"/fpga_init /opt/bin
 cp "$HERE"/notch1 "$HERE"/notch2 "$HERE"/polyphase_fir /opt/lib
-cp "$HERE"/$FPGA /opt/lib
-ln -fsn $FPGA /opt/lib/main_diamond_sr.bin
+if [ -n "$FPGA" ]; then
+    cp "$HERE"/$FPGA /opt/lib
+    ln -fsn $FPGA /opt/lib/main_diamond_$PLACE.bin
+else
+    echo Warning: No FPGA image configured!
+fi
 
 # Install the libera configuration
 cp "$HERE"/libera_sr "$HERE"/libera_bo /etc/libera
@@ -84,8 +88,8 @@ ln -fsn libera_$PLACE /etc/libera/libera
 # Install the drivers.
 MODULES="/lib/modules/$(uname -r)"
 mkdir -p "$MODULES"
-cp "$HERE"/../msp/msp.ko "$MODULES"
-cp "$HERE"/../libera/libera.ko "$MODULES"
+cp "$HERE"/../drivers/msp/msp.ko "$MODULES"
+cp "$HERE"/../drivers/libera/libera.ko "$MODULES"
 depmod
 
 # Install the network reconfiguration tool

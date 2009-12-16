@@ -1,7 +1,7 @@
 # Workspace for all our builds.
 BUILD_ROOT = /scratch/tmp/libera-base
 # Output directory for final installable files
-INSTALL_ROOT = /home/libera/nfs/testing/libera-upgrade
+INSTALL_ROOT = /home/libera/nfs/upgrade-DLS-$(LIBERA_BASE_VERSION)
 
 # Canonical locations of toolchains.  Override in appropriate toolchains file
 # if necessary.

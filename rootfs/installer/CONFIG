@@ -7,6 +7,10 @@ include $(configdir)/../common/u-boot
 BOOT = initramfs
 IMAGE_ADDR = a2000000
 
+TFTP_PREFIX = $${tftpprefix}
+IMAGE_NAME = imagefile-$(TARGET)-$(LIBERA_BASE_VERSION).cpio.gz
+BOOT_SCRIPT_IMAGE = boot-script-$(TARGET)-$(LIBERA_BASE_VERSION).image
+
 PACKAGES += mtd-utils
 
 EXTRA_LIBS =
