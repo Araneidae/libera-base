@@ -41,13 +41,26 @@
 #include <linux/fs.h>
 #include <linux/ioport.h>
 
-#include <mach/hardware.h>
 #include <asm/io.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
+#include <mach/hardware.h>
 #include <mach/system.h>
 #include <mach/regs-ssp.h>
 #include <mach/mfp-pxa25x.h>
 
 #include <mach/ssp.h>
+
+#else
+/* Includes for 2.6.20 */
+#include <linux/slab.h>
+#include <linux/interrupt.h>
+#include <asm/hardware.h>
+#include <asm/irq.h>
+#include <asm/io.h>
+#include <asm/arch-pxa/system.h>
+
+#endif
 
 
 

@@ -1,9 +1,18 @@
+ifdef UNDEFINED
 ccflags-y += -DEBPP -DDEBUG=0
 ccflags-y += -O2 -Werror -Wextra
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-parameter
 ccflags-y += -Wno-missing-field-initializers
 
 ccflags-y += -DLIBERA_BASE_VERSION='"$(LIBERA_BASE_VERSION)"'
+else
+EXTRA_CFLAGS += -DEBPP -DDEBUG=0
+EXTRA_CFLAGS += -O2 -Werror -Wextra
+EXTRA_CFLAGS += -Wno-declaration-after-statement -Wno-unused-parameter
+EXTRA_CFLAGS += -Wno-missing-field-initializers
+
+EXTRA_CFLAGS += -DLIBERA_BASE_VERSION='"$(LIBERA_BASE_VERSION)"'
+endif
 
 obj-m := msp.o
 msp-objs := msp_main.o
