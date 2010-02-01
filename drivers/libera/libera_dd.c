@@ -235,7 +235,7 @@ libera_dd_ioctl(struct inode *inode, struct file *file,
          */
         PDEBUG("DD: Invalid ioctl() argument (file: %s, line: %d)\n", 
                __FILE__, __LINE__);
-        return -ENOTTY;
+        err = -ENOTTY;
 
     } /* switch(cmd) */
 

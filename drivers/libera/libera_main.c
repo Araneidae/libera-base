@@ -36,14 +36,21 @@ or visit http://www.gnu.org
 
 #include <linux/slab.h>
 #include <linux/string.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
 #include <mach/system.h>
 // #include <asm/irq.h>
 // #include <asm/dma.h>
 // #include <asm/io.h>
-#include <asm/irq.h>
 #include <mach/dma.h>
 #include <mach/io.h>
 #include <mach/pxa2xx-gpio.h>
+#include <asm/irq.h>
+#else
+#include <asm/arch-pxa/system.h>
+#include <asm-arm/irq.h>
+#endif
+
 
 #include "libera_kernel.h"
 #include "libera_event.h"
@@ -1404,9 +1411,15 @@ static int __init install_devices(void)
     int minor;
     for (minor = 0; minor < dev_count; minor ++)
     {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
         struct device * device = device_create(
             libera_class, NULL,
             MKDEV(major, minor), NULL, device_names[minor]);
+#else
+        struct device * device = device_create(
+            libera_class, NULL,
+            MKDEV(major, minor), device_names[minor]);
+#endif
         if (IS_ERR(device))
         {
             ret = PTR_ERR(device);

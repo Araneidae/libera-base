@@ -300,11 +300,11 @@ getBlockedFromFIFOuser(struct libera_fifo* const q,
             if (!signal_pending(current)) {
                 mutex_unlock(&event->sem);
                 timeout = schedule_timeout(timeout);
+                mutex_lock(&event->sem);
                 if (!timeout) {
                     ret = -EAGAIN;
                     break;
                 }
-                mutex_lock(&event->sem);
                 continue;
             }
             ret = -ERESTARTSYS;

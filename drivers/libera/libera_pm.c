@@ -216,7 +216,7 @@ libera_pm_ioctl(struct inode *inode, struct file *file,
          */
         PDEBUG("PM: Invalid ioctl() argument (file: %s, line: %d)\n", 
                __FILE__, __LINE__);
-        return -ENOTTY;
+        err = -ENOTTY;
 
     } /* switch(cmd) */
 
