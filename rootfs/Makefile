@@ -44,6 +44,7 @@ menuconfig:
 	$(call ROOTFS,$(BUILD),package busybox) saveconfig
 
 clean:
+	chmod -R u+w $(O)
 	rm -rf $(O)
 
 clean-all: clean
@@ -62,6 +63,8 @@ installer: libera
 #     $(TFTP_DIR)/uImage-libera-$(KERNEL_RELEASE) \
 #     $(TFTP_DIR)/imagefile-installer-$(LIBERA_BASE_VERSION).cpio.gz 
 
+BOOT_SCRIPT_IMAGE = boot-script-installer-$(LIBERA_BASE_VERSION).image
+INSTALL_DRIVERS = ../drivers/install-drivers
 default: installer libera upgrade-libera upgrade-defaults
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR) $(TFTP_DIR)
@@ -70,8 +73,7 @@ default: installer libera upgrade-libera upgrade-defaults
 	sed <upgrade-defaults >$(TARGET_DIR)/upgrade-defaults \
             '$(call DO_SUBST,KERNEL_RELEASE LIBERA_BASE_VERSION)'
 	chmod +x $(TARGET_DIR)/upgrade-libera
-	cp $(O)/installer/image/boot-script-installer-$(LIBERA_BASE_VERSION).image \
-            $(TFTP_DIR)
+	cp $(O)/installer/image/$(BOOT_SCRIPT_IMAGE) $(TFTP_DIR)
 	cp $(KERNEL_IMAGE) $(TFTP_DIR)/uImage-libera-$(KERNEL_RELEASE)
 	cp $(O)/installer/image/imagefile.cpio.gz \
             $(TFTP_DIR)/imagefile-installer-$(LIBERA_BASE_VERSION).cpio.gz

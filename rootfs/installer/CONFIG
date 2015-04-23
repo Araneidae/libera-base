@@ -21,3 +21,5 @@ final-install:
             TARGET_DIR=$(sysroot)/installer COMPILERS=linux-arm_el
 	$(install) -m+x $(configdir)/configure-network /installer
 	$(startup) $(configdir)/install-libera S999
+
+# vim: set filetype=make:

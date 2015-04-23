@@ -18,6 +18,7 @@ exec >/mnt/mtd3/install.log 2>&1
 # Let anyone watching on the console see what's going on
 tail -f /mnt/mtd3/install.log >/dev/ttyS0 &
 echo Starting complete Libera upgrade
+mkdir -p /mnt/mtd3/state
 
 # Install configured kernel to mtd2, but only if necessary
 if head -c $(stat -c%s /uImage) /dev/mtd2 | $BIN/bindiff /uImage; then
