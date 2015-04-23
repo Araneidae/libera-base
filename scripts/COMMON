@@ -8,3 +8,12 @@ EXPORT = $(foreach var,$(1),$(var)=$(call SAFE_QUOTE,$($(var))))
 O = $(BUILD_ROOT)/$(COMPONENT)/$(COMPILER)
 INSTALL_O ?= $(TARGET_DIR)/$(COMPILER)
 TFTP_DIR = $(INSTALL_ROOT)/tftp
+
+# Access to kernel configuration
+KERNEL_TOP = $(TOP)/kernel
+K_MAKE = $(MAKE) -C $(KERNEL_TOP) TARGET=libera-2.6 CONFIG.local=
+K_MAKE_SILENT = $(K_MAKE) -s --no-print-directory
+KBUILD_OUTPUT  = $(shell $(K_MAKE_SILENT) print-build-dir)
+KERNEL_RELEASE = $(shell $(K_MAKE_SILENT) kernelrelease)
+
+# vim: set filetype=make:

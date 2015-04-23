@@ -12,8 +12,7 @@ export LIBERA_BASE_VERSION
 
 # The kernel will have been built using the kernel build tool.  Ask it kindly
 # where it put the build; we need this for module builds!
-KBUILD_OUTPUT = $(shell \
-    $(MAKE) -s -C $(KERNEL_TOP) TARGET=libera-2.6 print-build-dir)
+KBUILD_OUTPUT := $(shell $(K_MAKE) -s print-build-dir)
 
 TARGET_DIR = $(INSTALL_ROOT)/drivers/$(COMPONENT)
 
@@ -49,3 +48,5 @@ clean-all: clean
 	rm -rf $(TARGET_DIR)
 
 .PHONY: clean clean-all default
+
+# vim: set filetype=make:

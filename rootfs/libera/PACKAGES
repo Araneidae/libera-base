@@ -6,12 +6,21 @@ PACKAGES += ntp dropbear portmap
 # Useful debugging tools
 PACKAGES += strace lsof
 # Needed for subsequence maintenance and possible upgrades
-PACKAGES += mtd-utils 
+PACKAGES += mtd-utils
 # Useful for network analysis.
 PACKAGES += libpcap tcpdump
 
 # Dropbear is a little slow when built with thumb, so we override that.
 CFLAGS_dropbear = -O2
+
+# Fix package versions
+ntp_VERSION = 4.2.4p5
+dropbear_VERSION = 0.51
+portmap_VERSION = 6.0
+strace_VERSION = 4.5.17
+mtd-utils_VERSION = 1.2.0
+libpcap_VERSION = 1.0.0
+tcpdump_VERSION = 4.0.0
 
 
 # Package specific settings
@@ -28,3 +37,5 @@ INETD_ENABLE = y
 # authorised keys.  This will save annoyances when moving machines around.
 DROPBEAR_KEYS = $(foreach key,dss rsa,$(configdir)/dropbear_$(key)_host_key)
 SSH_AUTHORIZED_KEYS = $(configdir)/authorized_keys
+
+# vim: set filetype=make:

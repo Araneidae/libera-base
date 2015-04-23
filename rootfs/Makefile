@@ -18,9 +18,6 @@ unexport BUILD PACKAGE
 default: 
 
 
-K_MAKE = $(MAKE) --no-print-directory -s -C $(KERNEL_TOP) TARGET=libera-2.6
-KBUILD_OUTPUT  := $(shell $(K_MAKE) print-build-dir)
-KERNEL_RELEASE := $(shell $(K_MAKE) kernelrelease)
 # KERNEL_IMAGE locates the kernel image that will be installed.
 KERNEL_IMAGE = $(KBUILD_OUTPUT)/arch/arm/boot/uImage
 # This is where the libera image is placed: this will be installed on the
@@ -35,7 +32,8 @@ DO_SUBST = $(foreach sym,$1,s/@@$(sym)@@/$($(sym))/g;)
 #
 #   $(call ROOTFS,<target-name>,<action>[,<package>])
 #
-ROOTFS = $(ROOTFS_TOP)/rootfs $2 TARGET=$(CURDIR)/$1 TARGET_ROOT=$(O)/$1
+ROOTFS = $(ROOTFS_TOP)/rootfs $2 \
+    TARGET=$(CURDIR)/$1 TARGET_ROOT=$(O)/$1 ROOTFS_ROOT=$(O)
 
 
 package:

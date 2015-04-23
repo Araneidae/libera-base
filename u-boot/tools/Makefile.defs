@@ -1,4 +1,7 @@
 TARGETS_linux-arm = bindiff makeenv readenv
 TARGETS_linux-arm_el = $(TARGETS_linux-arm)
 
-makeenv: crc32lib.o
+makeenv: makeenv.c crc32lib.o
+
+bindiff: bindiff.c
+readenv: readenv.c

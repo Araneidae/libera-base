@@ -1,19 +1,16 @@
 # Workspace for all our builds.
 BUILD_ROOT = /scratch/tmp/libera-base
 # Output directory for final installable files
-INSTALL_ROOT = /home/libera/nfs/upgrade-DLS-$(LIBERA_BASE_VERSION)
 INSTALL_ROOT = $(BUILD_ROOT)/upgrade-DLS-$(LIBERA_BASE_VERSION)
 
 # Canonical locations of toolchains.  Override in appropriate toolchains file
 # if necessary.
 BINUTILS_DIR = /dls_sw/targetOS/x-tools/$(TOOLCHAIN_VERSION)/$(COMPILER_PREFIX)
 
-# Kernel build configuration.
-KERNEL_TOP = $(TOP)/../kernel
 # Rootfs builder.
 ROOTFS_TOP = $(TOP)/../rootfs
 
-# The u-boot image to be installed is here.
+# The u-boot image to be installed and a copy of mkimage are here.
 U_BOOT_TOP = /dls_sw/targetOS/u-boot/xcep-dls-2
 
 # All installation images are uploaded to this TFTP server
@@ -24,3 +21,5 @@ LIBERA_BASE_VERSION = 1.1
 
 # Allow local overrides of all the above.
 -include $(TOP)/CONFIG.local
+
+# vim: set filetype=make:
