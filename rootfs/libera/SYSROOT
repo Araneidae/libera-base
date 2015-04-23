@@ -25,5 +25,3 @@ final-install:
             $(configdir)/resolv.conf.lab $(configdir)/resolv.conf.pri /etc
 	ln -s resolv.conf.lab $(sysroot)/etc/resolv.conf
 
-        # Trigger post-installation configuration
-	$(startup) $(configdir)/post-install S999

@@ -16,19 +16,3 @@ case "$BROADCAST" in
         TFTP_SERVER=unknown
         ;;
 esac
-
-
-# Post installation script
-POST_SCRIPT='libera-post-install-@@LIBERA_BASE_VERSION@@.tgz'
-
-pre_upgrade()
-{
-    if [ -e /opt/state/$(hostname).state ]; then
-        cp /opt/state/$(hostname).state /mnt/nfs/state/  ||
-            Error 'Unable to save state file'
-    fi
-
-    # This needs to match base/post-install/post-install.sh
-    [ "$SCRIPT_ARGS" = SR -o "$SCRIPT_ARGS" = BO ]  ||
-        Error Invalid script argument: must be SR or BO
-}
