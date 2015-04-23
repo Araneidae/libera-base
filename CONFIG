@@ -2,6 +2,7 @@
 BUILD_ROOT = /scratch/tmp/libera-base
 # Output directory for final installable files
 INSTALL_ROOT = /home/libera/nfs/upgrade-DLS-$(LIBERA_BASE_VERSION)
+INSTALL_ROOT = $(BUILD_ROOT)/upgrade-DLS-$(LIBERA_BASE_VERSION)
 
 # Canonical locations of toolchains.  Override in appropriate toolchains file
 # if necessary.
@@ -13,12 +14,13 @@ KERNEL_TOP = $(TOP)/../kernel
 ROOTFS_TOP = $(TOP)/../rootfs
 
 # The u-boot image to be installed is here.
-U_BOOT_TOP = /dls_sw/targetOS/u-boot/xcep
+U_BOOT_TOP = /dls_sw/targetOS/u-boot/xcep-dls-2
+
 # All installation images are uploaded to this TFTP server
-TFTP_SERVER = serv3:/tftpboot
+# TFTP_SERVER = serv3:/tftpboot
 
 # Version identification: present in rootfs and in drivers.
-LIBERA_BASE_VERSION = 1.0-dev
+LIBERA_BASE_VERSION = 1.1
 
 # Allow local overrides of all the above.
 -include $(TOP)/CONFIG.local
