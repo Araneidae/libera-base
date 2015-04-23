@@ -154,10 +154,9 @@ static void * msp_reset_register;
 
 /* Efficient (non-busy) uninterruptible delay in jiffies.  This delays for
  * about 5ms in general, but is a *lot* faster than calling mdelay(1)! */
-static void msp_delay_jiffies(int delay_jiff)
+static void msp_delay(void)
 {
-    __set_current_state(TASK_UNINTERRUPTIBLE);
-    schedule_timeout(delay_jiff);
+    schedule_timeout_uninterruptible(2);
 }
 
 
@@ -166,13 +165,13 @@ static void msp_delay_jiffies(int delay_jiff)
 static void msp_reset(void)
 {
     iowrite8((MRR_PGM | MRR_TCK) & ~MRR_NMI, msp_reset_register);
-    msp_delay_jiffies(1);
+    msp_delay();
 
     iowrite8(MRR_PGM | MRR_TCK | MRR_NMI, msp_reset_register);
-    msp_delay_jiffies(1);
+    msp_delay();
 
     iowrite8((MRR_NMI | MRR_TCK) & ~MRR_PGM, msp_reset_register);
-    msp_delay_jiffies(1);
+    msp_delay();
 }
 
 
@@ -220,7 +219,7 @@ static void msp_transform(
 static int ssp_exchange(unsigned long tx, unsigned long *rx)
 {
     SSP_WRITE(SSDR, tx);
-    msp_delay_jiffies(1);
+    msp_delay();
     int sssr = SSP_READ(SSSR);
     if ((sssr & SSSR_RNE) == 0)
     {
@@ -231,7 +230,7 @@ static int ssp_exchange(unsigned long tx, unsigned long *rx)
         return -EBADE;
     }
     *rx = SSP_READ(SSDR) & 0xffff;
-    msp_delay_jiffies(1);
+    msp_delay();
     return 0;
 }
 

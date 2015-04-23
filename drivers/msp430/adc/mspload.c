@@ -36,7 +36,8 @@ or visit http://www.gnu.org
 #include <sys/types.h>
 #include <sys/mman.h>
 
-#include "debug.h"
+#define TRACE(args...)
+#define TRACE1(args...)
 
 
 #define CPLD_ADD 0x10000000
