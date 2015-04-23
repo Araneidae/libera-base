@@ -1,0 +1,18 @@
+LINUX_VERSION = 2.6.30.9
+
+PATCHES = \
+    0001-Support-high-precision-ADM1023-remote-sensor.patch \
+    0002-Add-low_power-support-for-adm1021-driver.patch \
+    0003-XCEP-PXA255-Processor-Board.patch \
+    0004-Resize-XCEP-kernel-partition-to-accomodate-a-current.patch
+
+CONFIG = config-$(LINUX_VERSION)
+
+ARCH = arm
+TOOLCHAIN_VERSION = gcc-4.3.2-glibc-2.7
+COMPILER_PREFIX = arm-xscale-linux-gnueabi
+
+U_BOOT_PATH = /dls_sw/targetOS/u-boot/xcep
+
+BUILD_TARGET = uImage
+PATH := $(PATH):$(U_BOOT_PATH)
