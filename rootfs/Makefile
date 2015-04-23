@@ -75,6 +75,7 @@ default: installer libera upgrade-libera upgrade-defaults
 	cp $(KERNEL_IMAGE) $(TFTP_DIR)/uImage-libera-$(KERNEL_RELEASE)
 	cp $(O)/installer/image/imagefile.cpio.gz \
             $(TFTP_DIR)/imagefile-installer-$(LIBERA_BASE_VERSION).cpio.gz
+	cp $(INSTALL_DRIVERS) $(INSTALL_ROOT)/drivers
 
 install: default
 

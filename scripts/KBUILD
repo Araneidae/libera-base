@@ -10,11 +10,8 @@ export ARCH = arm
 # Make the version of Libera Base visible to the module being built.
 export LIBERA_BASE_VERSION
 
-# The kernel will have been built using the kernel build tool.  Ask it kindly
-# where it put the build; we need this for module builds!
-KBUILD_OUTPUT := $(shell $(K_MAKE) -s print-build-dir)
 
-TARGET_DIR = $(INSTALL_ROOT)/drivers/$(COMPONENT)
+TARGET_DIR = $(INSTALL_ROOT)/$(COMPONENT)
 
 
 default:

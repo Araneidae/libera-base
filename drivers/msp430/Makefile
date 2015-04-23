@@ -1,6 +1,6 @@
 TOP = $(CURDIR)/../..
 
-COMPONENT = msp
+COMPONENT = drivers/msp
 MAKEFILE = Kbuild
 COMPILER = linux-arm_el
 

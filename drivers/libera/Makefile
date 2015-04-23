@@ -1,6 +1,6 @@
 TOP = $(CURDIR)/../..
 
-COMPONENT = libera
+COMPONENT = drivers/libera
 MAKEFILE = Kbuild
 COMPILER = linux-arm_el
 

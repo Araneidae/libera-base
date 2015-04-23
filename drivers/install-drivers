@@ -1,0 +1,22 @@
+#!/bin/sh
+# Installation script for installing kernel drivers on target Libera system.
+
+HERE="$(dirname "$0")"
+
+Error() { echo >&2 "$@"; exit 1; }
+
+[ "$(uname -m)" = armv5tel ]  ||
+    Error This should be run on Libera
+
+grep -q '^DLS rootfs' /etc/version  ||
+    Error This should not be run on an i-Tech Libera
+
+# Ensure file system is writeable
+mount -o remount,rw /
+
+# Install the drivers.
+MODULES="/lib/modules/$(uname -r)"
+mkdir -p "$MODULES"
+cp "$HERE"/msp/msp.ko "$MODULES"
+cp "$HERE"/libera/libera.ko "$MODULES"
+depmod
