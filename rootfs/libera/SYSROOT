@@ -11,5 +11,12 @@ final-install:
         # Mount /dev/mtd3 as /var/opt for a writeable partition.
 	mkdir -p $(sysroot)/var/opt
 	cat $(configdir)/fstab >>$(sysroot)/etc/fstab
+	$(install) -d /opt
+	$(install) -l /var/opt/state /opt
+
+	$(install) \
+            $(configdir)/resolv.conf.lab $(configdir)/resolv.conf.pri /etc
+	ln -s resolv.conf.lab $(sysroot)/etc/resolv.conf
+
         # Trigger post-installation configuration
 	$(startup) $(configdir)/post-install S999
