@@ -4,7 +4,7 @@ default:
 
 
 DRIVERS = drivers/msp430 drivers/libera
-INSTALLER = u-boot rootfs base
+INSTALLER = u-boot rootfs
 
 
 ALL = $(DRIVERS) $(INSTALLER)
