@@ -23,7 +23,10 @@ clean:
 clean-all:
 	$(call DO_MAKE,$(ALL),clean-all)
 
-drivers:
+kernel:
+	$(call DO_MAKE,kernel)
+
+drivers: kernel
 	$(call DO_MAKE,$(DRIVERS))
 
 installer:
@@ -39,5 +42,5 @@ rootfs: u-boot
 
 default: $(ALL)
 
-.PHONY: default clean drivers installer docs
+.PHONY: default clean clean-all kernel drivers installer docs
 .PHONY: $(ALL)
