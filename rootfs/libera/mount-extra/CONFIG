@@ -1,6 +1,0 @@
-# Configuration to mount extra fstab like files.
-
-option:
-	$(install) $(optiondir)/fstab.lab $(optiondir)/fstab.pri /etc
-	echo 'FSTABS=/etc/fstab.lab' >$(sysroot)/etc/mount-extra
-	$(startup) $(optiondir)/mount-extra S125
