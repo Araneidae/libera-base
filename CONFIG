@@ -8,7 +8,7 @@ INSTALL_ROOT = $(BUILD_ROOT)/upgrade-DLS-$(LIBERA_BASE_VERSION)
 BINUTILS_DIR = /dls_sw/targetOS/x-tools/$(TOOLCHAIN_VERSION)/$(COMPILER_PREFIX)
 
 # Rootfs builder.
-ROOTFS_TOP = $(TOP)/../rootfs
+ROOTFS_TOP = /dls_sw/prod/targetOS/rootfs/1-4
 
 # The u-boot image to be installed and a copy of mkimage are here.
 U_BOOT_TOP = /dls_sw/targetOS/u-boot/xcep-dls-2
