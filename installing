@@ -1,0 +1,53 @@
+DLS Rootfs
+----------
+
+To install Libera DLS rootfs from i-Tech install follow these steps:
+
+1.  Connect Libera machine to serial console and ethernet
+2.  Boot machine and log in on serial console (root/Jungle)
+3.  Run these commands:
+
+    # pkill udhcpc.*
+    # ifconfig eth0 172.23.252.10 netmask 255.255.240.0
+    # mount 172.23.240.5:/exports/libera/nfs /mnt
+    # /mnt/upgrade-DLS-1.1/rootfs/upgrade-libera confirm
+
+    At this point the DLS rootfs will have been installed, but some manual
+    post-installation steps will be required.
+
+4.  Run 'mount -o remount,rw /' to enable the remaining steps.
+
+5.  Add 'gateway 172.23.240.254' to /etc/network/interfaces and then run:
+
+    # /etc/init.d/network restart
+    # /etc/init.d/mount-extra start
+
+The system is now working, though a host name will not have been set.
+
+
+EBPM Post Install
+-----------------
+
+At this point can complete installation of EBPM by the following steps:
+
+# /mnt/nfs/upgrade-DLS-1.1/drivers/install-drivers
+# mkdir /etc/libera
+# /mnt/prod/R3.14.12.3/ioc/Libera/2.05.16/install_d/libera-install-ioc -fa SR
+# /opt/bin/install-fpga /mnt/work/hardware/Libera/fpga-testing/ebpm/v3.00.5/
+# /opt/bin/configure-network -w TS-DI-EBPM-08
+
+Reboot and all is done.
+
+
+TMBF Post Install
+-----------------
+
+Similar process, but installation of FPGA is more manual:
+
+# /mnt/prod/R3.14.12.3/ioc/TMBF/3.2/install_d/tmbf-install-ioc -fa
+# /opt/bin/configure-network -w TS-DI-TMBF-01
+# cp /mnt/prod/hardware/LiberaBBFP/v3.00.0/neutrino_hbpp_top.bin \
+    /opt/lib/tmbf.bin.v3.00.0
+# ln -s tmbf.bin.v3.00.0 /opt/lib/tmbf.bin
+
+Again can now reboot.
