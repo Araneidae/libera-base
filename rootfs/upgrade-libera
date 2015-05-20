@@ -3,7 +3,7 @@
 # Script to coordinate the upgrade of Libera.
 
 HERE="$(dirname "$0")"
-U_BOOT="$HERE"/../u-boot-upgrade
+U_BOOT_SRC="$HERE"/../u-boot-upgrade
 
 Error()
 {
@@ -79,6 +79,12 @@ shift $((OPTIND-1))
 
 [ "$TFTP_SERVER" = unknown ] &&
     Error Must specify TFTP server
+
+# Before starting u-boot upgrade take a local copy for safety
+U_BOOT="$(mktemp -dt update-u-bootXXXXXX)"  &&
+trap 'rm -rf "$U_BOOT"' EXIT  &&
+cp -a "$U_BOOT_SRC"/* "$U_BOOT"  ||
+    Error Unable to prepare u-boot installation.
 
 # First check that the u-boot is properly upgraded
 "$U_BOOT"/update-u-boot -w ||
